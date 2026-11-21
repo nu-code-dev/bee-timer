@@ -7,10 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet. The hive is resting.
+
+## [0.1.4] - 2026-11-21
+
+### Added
+
+- **Swarms** settings group with two toggles, both on by default: **Rare Swarms**
+  (0.05%, blessed or demonic, ×5 of every good/bad effect, full-screen theme) and
+  **Common Swarms** (0.1%, happy or angry, ×1 of every effect, themed popup).
+  Compact mode shows a background tint + small label instead of the full overlay.
+- **Compact mode** (▭): collapses the window to just the countdown; encouraging
+  messages and swarm themes keep working.
+- **Editable starting duration** via the click-to-edit label above the countdown
+  (only before the timer runs; disabled while running or paused).
+- **Stop button**: while paused, Reset turns into Stop (resets without restarting).
+- Hyprland compositor-side resize fallback so wizard/settings/compact window
+  sizes actually apply on Wayland.
+
 ### Changed
 
-- `packaging/arch/`: bumped `bee-timer-bin` to 0.1.3 with the verified release
-  AppImage checksum; regenerated `.SRCINFO`.
+- **Reduce motion** now also hides the seconds count bar (it can flicker at high
+  tick speeds), and the description says so.
+- Fixed the settings "right side glitches out of frame" repaint issue with a
+  forced compositor repaint after window resizes.
+- **AUR package** synced to the published release with the verified AppImage
+  checksum; `.SRCINFO` regenerated.
 
 ## [0.1.3] - 2026-11-21
 

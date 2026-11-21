@@ -850,3 +850,244 @@ body.light-mode .screen::-webkit-scrollbar-thumb {
   background-clip: padding-box;
 }
 body.light-mode .screen::-webkit-scrollbar-thumb:hover { background: rgba(150, 100, 20, 0.65); background-clip: padding-box; }
+
+/* ==================== duration editor (pre-run only) ===================== */
+.duration-edit-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 20px;
+  margin: 0 0 2px;
+}
+.duration-edit {
+  padding: 2px 8px;
+  border: 1px dashed transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.duration-edit:hover:not(:disabled) {
+  color: var(--honey);
+  border-color: var(--line-strong);
+  background: rgba(247, 183, 51, 0.08);
+}
+.duration-edit:disabled { cursor: not-allowed; opacity: 0.75; }
+.duration-edit-form { display: flex; align-items: center; gap: 4px; }
+.duration-edit-form input {
+  width: 64px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--honey);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-align: center;
+  outline: none;
+}
+.duration-edit-form input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(247, 183, 51, 0.14); }
+.mini-btn {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  border: 1px solid var(--line-strong);
+  background: rgba(247, 183, 51, 0.16);
+  color: var(--honey);
+  font-size: 11px;
+  cursor: pointer;
+}
+.mini-btn.ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+.mini-btn:hover { filter: brightness(1.15); }
+
+/* ============================ compact mode =============================== */
+.compact-exit {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 40;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(20, 14, 6, 0.5);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.25;
+  transition: opacity 0.2s;
+  -webkit-app-region: no-drag;
+}
+.compact-exit:hover { opacity: 1; }
+body.light-mode .compact-exit { background: rgba(255, 250, 238, 0.7); }
+
+.app.compact { border-radius: 18px; }
+.app.compact .screens { display: flex; align-items: center; justify-content: center; }
+.app.compact .screen { overflow: hidden; }
+.app.compact .titlebar,
+.app.compact .second-meter,
+.app.compact .timer-controls,
+.app.compact .controls-status,
+.app.compact .reset-quip,
+.app.compact .chaos-log,
+.app.compact .duration-edit-row,
+.app.compact .format-badge { display: none !important; }
+.app.compact .timer {
+  padding: 0 10px;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+.app.compact .time-block { padding: 0; width: 100%; }
+.app.compact .time-display { font-size: 46px; line-height: 1; }
+.app.compact .compact-exit { display: grid; }
+.app.compact .toast {
+  left: 6px; right: 6px; bottom: 4px;
+  padding: 5px 8px;
+  font-size: 9.5px;
+  border-radius: 8px;
+}
+.app.compact .swarm-overlay { border-radius: 18px; }
+
+/* ============================= swarm themes ============================== */
+.app { transition: background 0.25s ease, box-shadow 0.25s ease; }
+.app.swarm-blessed {
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(255, 236, 170, 0.55), transparent 60%),
+    radial-gradient(90% 90% at 0% 100%, rgba(255, 205, 80, 0.4), transparent 60%),
+    linear-gradient(160deg, #fff6d5, #ffd96b 75%);
+  box-shadow: 0 0 0 2px rgba(255, 215, 90, 0.8), 0 0 60px rgba(255, 215, 90, 0.45);
+}
+.app.swarm-demonic {
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(120, 0, 0, 0.75), transparent 65%),
+    radial-gradient(90% 90% at 0% 100%, rgba(60, 0, 0, 0.75), transparent 60%),
+    linear-gradient(160deg, #2a0505, #100202 75%);
+  box-shadow: 0 0 0 2px rgba(255, 60, 40, 0.75), 0 0 70px rgba(255, 40, 20, 0.4);
+}
+.app.swarm-blessed .time-display { color: #4a3300; text-shadow: 0 0 30px rgba(255, 240, 170, 0.9); }
+.app.swarm-demonic .time-display { color: #ffd7cf; text-shadow: 0 0 34px rgba(255, 40, 20, 0.8); }
+.app.swarm-blessed .titlebar { border-bottom-color: rgba(150, 100, 0, 0.2); }
+.app.swarm-demonic .titlebar { border-bottom-color: rgba(255, 60, 40, 0.25); }
+
+.swarm-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  overflow: hidden;
+  border-radius: var(--radius);
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+.swarm-fx { position: absolute; inset: 0; }
+.swarm-overlay.demonic .swarm-fx {
+  background: radial-gradient(120% 120% at 50% 50%, rgba(70, 0, 0, 0.55), rgba(20, 0, 0, 0.85));
+  animation: swarm-blood-in 0.35s ease-out both;
+}
+.swarm-overlay.demonic .swarm-fx::before,
+.swarm-overlay.demonic .swarm-fx::after {
+  content: "";
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  height: 34%;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(255, 50, 30, 0.55) 22px 34px);
+  clip-path: polygon(0 0, 3% 100%, 7% 8%, 11% 100%, 15% 10%, 19% 100%, 23% 6%, 27% 100%, 31% 9%, 35% 100%, 39% 7%, 43% 100%, 47% 10%, 51% 100%, 55% 6%, 59% 100%, 63% 9%, 67% 100%, 71% 7%, 75% 100%, 79% 10%, 83% 100%, 87% 6%, 91% 100%, 95% 8%, 100% 100%, 100% 0);
+  transform-origin: top center;
+  animation: swarm-spikes-in 0.55s 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.swarm-overlay.demonic .swarm-fx::before { top: 0; }
+.swarm-overlay.demonic .swarm-fx::after { bottom: 0; transform-origin: bottom center; scale: 1 -1; }
+.swarm-overlay.blessed .swarm-fx {
+  background:
+    conic-gradient(from 0deg at 50% 45%, rgba(255, 240, 170, 0.5) 0 6deg, transparent 6deg 24deg,
+      rgba(255, 240, 170, 0.3) 24deg 30deg, transparent 30deg 48deg, rgba(255, 240, 170, 0.5) 48deg 54deg,
+      transparent 54deg 72deg, rgba(255, 240, 170, 0.3) 72deg 78deg, transparent 78deg 96deg,
+      rgba(255, 240, 170, 0.5) 96deg 102deg, transparent 102deg 120deg, rgba(255, 240, 170, 0.3) 120deg 126deg,
+      transparent 126deg 144deg, rgba(255, 240, 170, 0.5) 144deg 150deg, transparent 150deg 168deg,
+      rgba(255, 240, 170, 0.3) 168deg 174deg, transparent 174deg 192deg, rgba(255, 240, 170, 0.5) 192deg 198deg,
+      transparent 198deg 216deg, rgba(255, 240, 170, 0.3) 216deg 222deg, transparent 222deg 240deg,
+      rgba(255, 240, 170, 0.5) 240deg 246deg, transparent 246deg 264deg, rgba(255, 240, 170, 0.3) 264deg 270deg,
+      transparent 270deg 288deg, rgba(255, 240, 170, 0.5) 288deg 294deg, transparent 294deg 312deg,
+      rgba(255, 240, 170, 0.3) 312deg 318deg, transparent 318deg 336deg, rgba(255, 240, 170, 0.5) 336deg 342deg,
+      transparent 342deg 360deg),
+    radial-gradient(circle at 50% 45%, rgba(255, 250, 220, 0.55), rgba(255, 210, 90, 0.25) 55%, transparent 75%);
+  animation: swarm-rays-spin 3s linear both, swarm-glow-pulse 2.4s ease-in-out both;
+}
+.swarm-label {
+  position: relative;
+  z-index: 2;
+  padding: 10px 18px;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.4px;
+  text-align: center;
+  max-width: 88%;
+  color: #1d1200;
+  background: linear-gradient(135deg, #fff6d0, #ffd76b);
+  border: 2px solid rgba(255, 245, 200, 0.9);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  animation: swarm-label-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+  display: none;
+}
+.swarm-overlay.demonic .swarm-label {
+  color: #ffe9e3;
+  background: linear-gradient(135deg, #4a0505, #7a0d0d);
+  border-color: rgba(255, 90, 60, 0.85);
+  box-shadow: 0 0 40px rgba(255, 50, 20, 0.5), 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.swarm-overlay.rare .swarm-label { display: block; font-size: 17px; padding: 16px 22px; }
+.swarm-overlay.rare.demonic .swarm-label { animation: swarm-label-pop 0.4s 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.25) both, swarm-label-shake 0.5s 0.55s ease-in-out; }
+
+@keyframes swarm-blood-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes swarm-spikes-in { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+@keyframes swarm-rays-spin { from { transform: rotate(0deg) scale(1.15); } to { transform: rotate(360deg) scale(1.15); } }
+@keyframes swarm-glow-pulse { 0% { opacity: 0; } 20% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes swarm-label-pop { from { opacity: 0; transform: scale(0.75) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes swarm-label-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px) rotate(-0.6deg); }
+  40% { transform: translateX(4px) rotate(0.6deg); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.toast.swarm-blessed {
+  background: linear-gradient(135deg, #fff8dc, #ffe08a);
+  border-color: rgba(180, 130, 0, 0.7);
+  color: #3a2a00;
+}
+.toast.swarm-demonic {
+  background: linear-gradient(135deg, #3a0606, #651010);
+  border-color: rgba(255, 70, 45, 0.8);
+  color: #ffe9e3;
+}
+body.reduced-motion .second-meter { display: none; }
+body.reduced-motion .swarm-fx,
+body.reduced-motion .swarm-fx::before,
+body.reduced-motion .swarm-fx::after,
+body.reduced-motion .swarm-label { animation: none !important; }
+
+/* ==================== settings overflow / resize glitch guards =========== */
+.settings { width: 100%; max-width: 100%; min-width: 0; overflow-x: hidden; }
+.feature-row, .feature-copy { min-width: 0; }
+.feature-row { flex-wrap: wrap; row-gap: 4px; }
+.feature-row .feature-copy { flex: 1 1 140px; }
+@media (max-width: 430px) {
+  .extra-field { display: none; }
+  .feature-row .feature-copy { flex-basis: 100%; }
+  .settings { padding-left: 14px; padding-right: 14px; }
+}
+.swarm-title { color: var(--honey); }

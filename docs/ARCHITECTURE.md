@@ -60,6 +60,7 @@ Drives three screens (`wizard`, `timer`, `settings`), owns the engine instance, 
 | --- | --- |
 | `add-second`, `add-minute`, `double`, `freeze`, `format`, `speed`, `end` | rendered from the next snapshot / overlays |
 | `pun` (support message) | in-app toast + `notify:show` |
+| `swarm` | themed in-app popup + full-screen theme (rare) or background tint (compact) + `notify:show` |
 | `bees` | `playBuzz()` + bee/🍯 swarm overlay + screen shake |
 | `window` | `window.chaosMove(marginPx)` |
 | `rest-start` | `playChime(true)` |
@@ -100,7 +101,7 @@ Freeze and rest do **not** increment the game tick, so they genuinely stall the 
 
 Effects are rolled once per active tick in a fixed order, which is what makes replay/determinism possible:
 
-`addSecond → addMinute → doubleTime → halveTime → freeze → formatChaos → (distortingChaos | speedDistortion) → windowChaos → originalBeeMode → beePuns → restMode`
+`addSecond → addMinute → doubleTime → halveTime → freeze → formatChaos → (distortingChaos | speedDistortion) → windowChaos → originalBeeMode → beePuns → rollSwarms → restMode`
 
 Each roll is `rng() * 100 < chancePct` and is skipped entirely when `enabled` is false. Multipliers are additional rolls (format choice, speed choice, message draw). Distorting Chaos replaces the normal speed distortion roll entirely while it is enabled, and compounds the multiplier permanently (uncapped by tick time, clamped to 0.125×–16×).
 
@@ -110,6 +111,7 @@ Each roll is `rng() * 100 < chancePct` and is skipped entirely when `enabled` is
 - **Display-only formatting chaos.** `formatRemaining(ms, kind)` is pure; `swap` prints seconds where minutes go (and vice versa), `round` rounds to the nearest minute. The real `remainingMs` is never touched. `snapshot()` exposes both `display` (chaotic) and `rawDisplay` (truth) for tests/debugging.
 - **Speed distortion scales the real tick.** `speedMult` is 0.5 or 2 while `tick < speedState.untilTick`; `nextTickDelay()` = `round(1000 * mult)`. Distorting Chaos sets `untilTick = Infinity` and compounds the multiplier on each trigger. The displayed seconds counter still advances by one per tick.
 - **Freeze** = N canceled countdowns; **rest** = a real-time pause (default 3 min) that can be skipped; after either, rest has a cooldown (default 5 min) during which it cannot retrigger.
+- **Swarms** are resolved before rest mode: rare swarms apply ×5 of every good/bad effect, common swarms ×1. Blessed/happy swarms halve the remaining time and clear freeze/format/speed; demonic/angry swarms add time, freeze, scramble formatting and distort speed. The rare variants drive a full-screen themed overlay (or background tint + toast in compact mode).
 - **Supportive messages** are drawn from a shuffled bag and reshuffled when empty, so all ~60 appear before any repeats (the config key remains `beePuns` for backwards compatibility).
 - `reset()` restores duration, stats, logs, freeze/speed/format/rest/cooldown state; `updateConfig()` swaps in new settings and re-caps `maxRemainingMs` without resetting progress.
 

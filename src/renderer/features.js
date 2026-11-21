@@ -95,6 +95,20 @@ export const FEATURES = [
     desc: 'Randomly moves the window. Off by default.',
     group: 'advanced',
   },
+  {
+    key: 'swarmRare',
+    icon: '🌟',
+    title: 'Rare Swarms',
+    desc: 'A rare blessed or demonic swarm: ×5 of every good or bad effect. Whole-screen event.',
+    group: 'swarm',
+  },
+  {
+    key: 'swarmCommon',
+    icon: '🐝',
+    title: 'Common Swarms',
+    desc: 'A happy or angry swarm: ×1 of every good or bad effect. Themed popup.',
+    group: 'swarm',
+  },
 ];
 
 export const FEATURE_MAP = Object.fromEntries(FEATURES.map((f) => [f.key, f]));

@@ -21,6 +21,8 @@ function makeConfig({ durationMs = 60_000, maxRemainingMs = 86_400_000, features
       originalBeeMode: off({ durationMs: 4000 }),
       beePuns: off(),
       restMode: off({ restMs: 180_000, cooldownMs: 300_000 }),
+      swarmRare: off(),
+      swarmCommon: off(),
       ...features,
     },
   };
@@ -315,4 +317,39 @@ test('distorting chaos does nothing when speed distortion is disabled', () => {
   step(3);
   assert.equal(snap.speedMult, 1);
   assert.equal(snap.speedPermanent, false);
+});
+
+
+test('blessed swarm halves time once and clears curses', () => {
+  const config = makeConfig({ features: { swarmCommon: { enabled: true, chancePct: 100 } } });
+  const { engine, step, snap, effects } = harness(config, { rng: () => 0 });
+  engine.start();
+  step(1); // 59000, then blessed swarm (kind rng 0 -> blessed) halving once
+  assert.equal(snap.remainingMs, 29_500);
+  assert.equal(snap.stats.swarms, 1);
+  assert.ok(effects.some((e) => e.type === 'swarm' && e.kind === 'blessed' && e.units === 1));
+});
+
+test('demonic swarm applies one of every bad effect', () => {
+  const config = makeConfig({ features: { swarmCommon: { enabled: true, chancePct: 100 } } });
+  // first roll hits, second roll (kind) is >= 0.5 -> demonic
+  const values = [0, 0.9];
+  let call = 0;
+  const rng = () => (call < values.length ? values[call++] : 0.9);
+  const { engine, step, snap, effects } = harness(config, { rng });
+  engine.start();
+  step(1);
+  assert.equal(snap.stats.swarms, 1);
+  assert.equal(snap.stats.demonicSwarms, 1);
+  assert.ok(snap.remainingMs > 100_000); // +1s, +1m, double
+  assert.ok(snap.frozenTicks > 0);
+  assert.ok(effects.some((e) => e.type === 'swarm' && e.kind === 'demonic'));
+});
+
+test('rare swarm uses 5 units and is flagged rare', () => {
+  const config = makeConfig({ features: { swarmRare: { enabled: true, chancePct: 100 } } });
+  const { engine, step, effects } = harness(config, { rng: () => 0 });
+  engine.start();
+  step(1);
+  assert.ok(effects.some((e) => e.type === 'swarm' && e.rare === true && e.units === 5));
 });

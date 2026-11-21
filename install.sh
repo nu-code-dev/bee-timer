@@ -20,7 +20,7 @@
 #   --yes                   answer Yes to the optional prompts (non-interactive)
 #   --help                  show this help
 #   BEE_TIMER_PREFIX=...    install prefix (default: $HOME/.local)
-#   BEE_TIMER_VERSION=0.1.3 pin a specific release (default: latest)
+#   BEE_TIMER_VERSION=0.1.4 pin a specific release (default: latest)
 #   BEE_TIMER_REPO=...      override the GitHub repo
 #   BEE_TIMER_YES=1         same as --yes
 #

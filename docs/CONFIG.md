@@ -49,13 +49,15 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
 | `originalBeeMode` | `false` | `1` | `durationMs`: `4000` (500–30000) | Synthesized bee buzz + swarm overlay for the given duration. |
 | `beePuns` | `true` | `1` | — | Legacy key name for **Supportive BEE Messages**: kind, encouraging notifications (no puns) plus an in-app toast. |
 | `restMode` | `true` | `0.5` | `restMs`: `180000` (5000–3600000); `cooldownMs`: `300000` (0–3600000) | Starts a skippable rest during which the countdown pauses. Cannot retrigger while resting or during cooldown. |
+| `swarmRare` | `true` | `0.05` | — | Rare swarm (blessed or demonic, 50/50): ×5 of every good or bad effect. Full-screen themed event. |
+| `swarmCommon` | `true` | `0.1` | — | Common swarm (happy or angry, 50/50): ×1 of every good or bad effect. Themed popup. |
 
 ### `appearance`
 
 | Key | Type | Default | Range / allowed | Meaning |
 | --- | --- | --- | --- | --- |
 | `theme` | string | `"dark"` | `"dark"` or `"light"` | Theme id. `"dark"` is the default dark-honey look; `"light"` is the cream/honey light theme (Settings → App → **Light mode**). Old configs containing `"honey"` are migrated to `"dark"`. |
-| `reducedMotion` | boolean | `false` | `true` / `false` | Calms animations (bee swarm, shake, pulses). |
+| `reducedMotion` | boolean | `false` | `true` / `false` | Calms animations (swarms, shake, pulses) and hides the seconds count bar, which can flicker at high tick speeds. |
 | `opacity` | number | `0.97` | 0.6 – 1.0 | Window-level opacity. |
 
 ### `window`
@@ -93,7 +95,9 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
     "windowChaos":     { "enabled": false, "chancePct": 1, "marginPx": 40 },
     "originalBeeMode": { "enabled": false, "chancePct": 1, "durationMs": 4000 },
     "beePuns":         { "enabled": true,  "chancePct": 1 },
-    "restMode":        { "enabled": true,  "chancePct": 0.5, "restMs": 180000, "cooldownMs": 300000 }
+    "restMode":        { "enabled": true,  "chancePct": 0.5, "restMs": 180000, "cooldownMs": 300000 },
+    "swarmRare":       { "enabled": true,  "chancePct": 0.05 },
+    "swarmCommon":     { "enabled": true,  "chancePct": 0.1 }
   },
   "appearance": {
     "theme": "dark",

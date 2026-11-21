@@ -31,6 +31,8 @@ const DEFAULTS = Object.freeze({
     originalBeeMode:{ enabled: false, chancePct: 1, durationMs: 4000 },
     beePuns:        { enabled: true,  chancePct: 1 },
     restMode:       { enabled: true,  chancePct: 0.5, restMs: 180000, cooldownMs: 300000 },
+    swarmRare:      { enabled: true,  chancePct: 0.05 },
+    swarmCommon:    { enabled: true,  chancePct: 0.1 },
   },
   appearance: { theme: 'dark', reducedMotion: false, opacity: 0.97 },
   window: { alwaysOnTop: true, x: null, y: null, width: 392, height: 250 },
@@ -90,6 +92,8 @@ const FEATURE_RULES = {
     restMs: Math.round(num(i.restMs, 5000, 3600000, d.restMs)),
     cooldownMs: Math.round(num(i.cooldownMs, 0, 3600000, d.cooldownMs)),
   }),
+  swarmRare:       (d, i) => ({ enabled: bool(i.enabled, d.enabled), chancePct: num(i.chancePct, 0, 100, d.chancePct) }),
+  swarmCommon:     (d, i) => ({ enabled: bool(i.enabled, d.enabled), chancePct: num(i.chancePct, 0, 100, d.chancePct) }),
 };
 
 function sanitizeConfig(input) {

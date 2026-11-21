@@ -75,6 +75,9 @@ const EMPTY_STATS = () => ({
   beeModes: 0,
   puns: 0,
   rests: 0,
+  swarms: 0,
+  blessedSwarms: 0,
+  demonicSwarms: 0,
 });
 
 export function formatMult(mult) {
@@ -382,9 +385,69 @@ export class BeeEngine {
       this.onEffect({ type: 'pun', pun });
     }
 
+    this.rollSwarms();
+
     if (this.roll('restMode') && !this.rest && this.cooldownRemainingMs === 0) {
       this.startRest();
     }
+  }
+
+  rollSwarms() {
+    if (this.roll('swarmRare')) {
+      const kind = this.rng() < 0.5 ? 'blessed' : 'demonic';
+      this.triggerSwarm(kind, 5, true);
+      return;
+    }
+    if (this.roll('swarmCommon')) {
+      const kind = this.rng() < 0.5 ? 'blessed' : 'demonic';
+      this.triggerSwarm(kind, 1, false);
+    }
+  }
+
+  /**
+   * Blessed/happy swarms apply `units` of every good effect; demonic/angry
+   * swarms apply `units` of every bad effect. Rare swarms use units = 5.
+   */
+  triggerSwarm(kind, units, rare) {
+    const speedFeature = this.config.features?.speedDistortion;
+    const multipliers = speedFeature?.multipliers?.length ? speedFeature.multipliers : [0.5, 2];
+
+    if (kind === 'blessed') {
+      for (let i = 0; i < units; i += 1) {
+        this.remainingMs = Math.max(1000, Math.floor(this.remainingMs / 2));
+      }
+      // Good effects also clear every ongoing curse.
+      this.freezeTicks = 0;
+      this.formatState = { kind: null, untilTick: 0 };
+      this.speedState = { mult: 1, untilTick: 0 };
+      this.stats.blessedSwarms += 1;
+      this.pushLog(rare ? '🌟' : '🕊️', rare
+        ? `RARE BLESSED SWARM! ×${units} blessings of every kind.`
+        : 'A happy swarm! A blessing of every kind.');
+    } else {
+      for (let i = 0; i < units; i += 1) {
+        this.remainingMs = Math.min(this.maxRemainingMs, this.remainingMs + 1000);
+        this.remainingMs = Math.min(this.maxRemainingMs, this.remainingMs + 60_000);
+        this.remainingMs = Math.min(this.maxRemainingMs, this.remainingMs * 2);
+        this.freezeTicks += this.config.features?.freeze?.cycles ?? 5;
+        this.formatState = {
+          kind: this.rng() < 0.5 ? 'swap' : 'round',
+          untilTick: this.tick + (this.config.features?.formatChaos?.durationTicks ?? 3),
+        };
+        const mult = multipliers[Math.floor(this.rng() * multipliers.length)] ?? 0.5;
+        this.speedState = {
+          mult,
+          untilTick: this.tick + (this.config.features?.speedDistortion?.durationTicks ?? 4),
+        };
+      }
+      this.stats.demonicSwarms += 1;
+      this.pushLog(rare ? '💀' : '😠', rare
+        ? `RARE DEMONIC SWARM! ×${units} curses of every kind.`
+        : 'An angry swarm! A curse of every kind.');
+    }
+
+    this.stats.swarms += 1;
+    this.onEffect({ type: 'swarm', kind, units, rare });
   }
 
   triggerFormatChaos() {

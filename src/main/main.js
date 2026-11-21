@@ -24,6 +24,7 @@ const MODE_SIZES = {
   wizard: { width: 660, height: 880 },
   widget: { width: 400, height: 320 },
   settings: { width: 480, height: 740 },
+  compact: { width: 260, height: 110 },
 };
 
 /** @type {BrowserWindow | null} */
@@ -48,8 +49,8 @@ function createWindow() {
   const opts = {
     width: size.width,
     height: size.height,
-    minWidth: 360,
-    minHeight: 220,
+    minWidth: 240,
+    minHeight: 100,
     frame: false,
     transparent: true,
     backgroundColor: '#00000000',
@@ -102,6 +103,20 @@ function setMode(mode) {
   mainWindow.setResizable(true);
   mainWindow.setSize(size.width, size.height, false);
   if (mode === 'wizard') mainWindow.center();
+
+  // Wayland/Hyprland can ignore client-side resize requests (the same reason
+  // window teleport needs an IPC fallback). Ask the compositor directly.
+  if (process.env.HYPRLAND_INSTANCE_SIGNATURE || process.env.WAYLAND_DISPLAY) {
+    const match = 'class:bee-timer';
+    runCommand('hyprctl', [
+      'eval',
+      `hl.dispatch(hl.dsp.window.float({ window = "${match}", action = "on" }))`,
+    ]);
+    runCommand('hyprctl', [
+      'eval',
+      `hl.dispatch(hl.dsp.window.resize({ x = ${size.width}, y = ${size.height}, window = "${match}" }))`,
+    ]);
+  }
   return size;
 }
 

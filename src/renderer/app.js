@@ -20,6 +20,10 @@ let draftDurationMs = 10 * 60 * 1000;
 let lastLogSignature = '';
 let lastLogNewestId = 0;
 const seenLogIds = new Set();
+let compactMode = false;
+let editingDuration = false;
+let swarmThemeTimer = null;
+let swarmOverlayTimer = null;
 
 const els = {};
 
@@ -34,6 +38,8 @@ function cacheEls() {
     'endOverlay', 'endStats', 'runBackBtn', 'endSettingsBtn', 'toast', 'toastText',
     'swarm', 'settingsCloseBtn', 'settingsLiveNote', 'midRunToggle', 'onTopToggle',
     'reducedMotionToggle', 'lightModeToggle', 'notifyAllToggle', 'defaultsBtn', 'quitBtn',
+    'app', 'durationEditBtn', 'durationEditForm', 'durationEditInput', 'durationEditCancel',
+    'compactBtn', 'compactExitBtn', 'swarmOverlay', 'swarmLabel', 'settingsSwarmFeatures',
     'pinBtn', 'minBtn', 'closeBtn', 'setupScreen', 'setupBtn', 'setupCloseBtn',
     'notifyStatusChip', 'notifyStatusText', 'hyprTargetText', 'installPaths', 'configPathText',
   ].forEach((id) => { els[id] = $(id); });
@@ -143,15 +149,50 @@ function durationLabel(ms) {
 // screens
 // --------------------------------------------------------------------------
 function showScreen(name) {
+  if (name !== 'timer' && compactMode) {
+    compactMode = false;
+    els.app.classList.remove('compact');
+  }
   screen = name;
   els.wizardScreen.classList.toggle('hidden', name !== 'wizard');
   els.timerScreen.classList.toggle('hidden', name !== 'timer');
   els.settingsScreen.classList.toggle('hidden', name !== 'settings');
   els.setupScreen.classList.toggle('hidden', name !== 'setup');
-  api.window.setMode(name === 'wizard' ? 'wizard' : name === 'timer' ? 'widget' : 'settings');
+  let mode = 'settings';
+  if (name === 'wizard') mode = 'wizard';
+  else if (name === 'timer') mode = compactMode ? 'compact' : 'widget';
+  api.window.setMode(mode);
   if (name === 'settings') refreshSettingsState();
   if (name === 'setup') loadIntegration();
   if (name === 'timer') render(latest);
+  forceRepaint();
+  setTimeout(forceRepaint, 140);
+}
+
+/**
+ * Transparent frameless windows on some compositors keep stale damage after a
+ * resize (the "right side glitches out of frame, then fixes itself" symptom).
+ * Forcing a compositor repaint after layout changes avoids it.
+ */
+function forceRepaint() {
+  if (!els.app) return;
+  els.app.style.transform = 'translate3d(0, 0, 0)';
+  requestAnimationFrame(() => {
+    els.app.style.transform = '';
+    window.dispatchEvent(new Event('resize'));
+  });
+}
+
+function toggleCompact() {
+  compactMode = !compactMode;
+  els.app.classList.toggle('compact', compactMode);
+  if (screen !== 'timer') {
+    showScreen('timer');
+  } else {
+    api.window.setMode(compactMode ? 'compact' : 'widget');
+    forceRepaint();
+    render(latest);
+  }
 }
 
 function onKeyDown(event) {
@@ -161,6 +202,10 @@ function onKeyDown(event) {
   }
   if (event.key === 'Escape' && screen === 'setup') {
     showScreen('settings');
+    return;
+  }
+  if (event.key === 'Escape' && compactMode) {
+    toggleCompact();
     return;
   }
   if (event.code === 'Space' && screen === 'timer' && !event.repeat) {
@@ -318,11 +363,15 @@ function buildFeatureLists() {
   els.advancedPanel.innerHTML = '';
   els.settingsFeatures.innerHTML = '';
   els.settingsAdvancedFeatures.innerHTML = '';
+  els.settingsSwarmFeatures.innerHTML = '';
 
   for (const feature of FEATURES) {
     if (feature.group === 'advanced') {
       els.advancedPanel.append(buildFeatureRow(feature));
       els.settingsAdvancedFeatures.append(buildFeatureRow(feature));
+    } else if (feature.group === 'swarm') {
+      els.wizardFeatures.append(buildFeatureRow(feature));
+      els.settingsSwarmFeatures.append(buildFeatureRow(feature));
     } else {
       els.wizardFeatures.append(buildFeatureRow(feature));
       els.settingsFeatures.append(buildFeatureRow(feature));
@@ -388,6 +437,63 @@ function applyFeatureAvailability() {
   });
 }
 
+
+// --------------------------------------------------------------------------
+// starting-duration editor (only before the timer runs)
+// --------------------------------------------------------------------------
+function startDurationEdit() {
+  if (engine && (engine.running || engine.paused)) return;
+  editingDuration = true;
+  els.durationEditInput.value = durationLabel(config.durationMs);
+  els.durationEditForm.classList.remove('hidden');
+  els.durationEditBtn.classList.add('hidden');
+  els.durationEditInput.focus();
+  els.durationEditInput.select();
+}
+
+function cancelDurationEdit() {
+  editingDuration = false;
+  els.durationEditForm.classList.add('hidden');
+  els.durationEditBtn.classList.remove('hidden');
+  render(latest);
+}
+
+async function commitDurationEdit() {
+  const parsed = parseDuration(els.durationEditInput.value);
+  if (!parsed || parsed < MIN_DURATION_MS || parsed > MAX_DURATION_MS) {
+    els.durationEditInput.value = durationLabel(config.durationMs);
+    els.durationEditInput.focus();
+    return;
+  }
+  if (engine && (engine.running || engine.paused)) {
+    cancelDurationEdit();
+    return;
+  }
+  config.durationMs = parsed;
+  draftDurationMs = parsed;
+  editingDuration = false;
+  els.durationEditForm.classList.add('hidden');
+  els.durationEditBtn.classList.remove('hidden');
+  if (engine) engine.reset();
+  hideEndScreen();
+  notifyConfigChanged();
+  await persist();
+  render(engine ? engine.snapshot() : latest);
+}
+
+function updateDurationEditor(snapshot) {
+  if (!els.durationEditBtn) return;
+  const editable = !(snapshot && (snapshot.running || snapshot.paused));
+  els.durationEditBtn.classList.toggle('hidden', editingDuration);
+  els.durationEditBtn.disabled = !editable;
+  els.durationEditBtn.title = editable
+    ? 'Click to change the starting duration'
+    : 'Reset or stop the timer to change the starting duration';
+  if (!editingDuration) {
+    els.durationEditBtn.textContent = `${durationLabel(config.durationMs)} · ${editable ? 'click to edit' : 'locked while running'}`;
+  }
+}
+
 // --------------------------------------------------------------------------
 // timer
 // --------------------------------------------------------------------------
@@ -410,9 +516,27 @@ function bindTimer() {
   });
   els.resetBtn.addEventListener('click', () => {
     if (!engine) ensureEngine();
+    const wasRunning = engine.running;
+    const wasPaused = engine.running && engine.paused;
     engine.reset();
     hideEndScreen();
-    engine.start();
+    // Reset while running restarts immediately; Stop (paused) stays stopped.
+    if (wasRunning && !wasPaused) engine.start();
+    render(engine.snapshot());
+  });
+  els.compactBtn.addEventListener('click', toggleCompact);
+  els.compactExitBtn.addEventListener('click', toggleCompact);
+  els.durationEditBtn.addEventListener('click', startDurationEdit);
+  els.durationEditCancel.addEventListener('click', cancelDurationEdit);
+  els.durationEditForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    commitDurationEdit();
+  });
+  els.durationEditInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelDurationEdit();
+    }
   });
   els.settingsBtn.addEventListener('click', () => {
     if (engine && engine.running && !engine.paused && !config.midRunSettings) return;
@@ -467,13 +591,17 @@ function render(snapshot) {
   }
   els.pauseChip.classList.toggle('hidden', !(snapshot.running && snapshot.paused));
 
+  const isPaused = snapshot.running && snapshot.paused;
   els.pauseBtn.textContent = snapshot.ended
     ? 'Run it back'
     : !snapshot.running
       ? 'Start'
-      : snapshot.paused
+      : isPaused
         ? 'Resume'
         : 'Pause';
+  els.resetBtn.textContent = isPaused ? 'Stop' : 'Reset';
+  els.resetBtn.title = isPaused ? 'Stop the timer and return to the starting duration' : 'Restart from the starting duration';
+  updateDurationEditor(snapshot);
   els.pauseBtn.disabled = false;
   const lockSettings = snapshot.running && !snapshot.paused && !config.midRunSettings;
   els.settingsBtn.disabled = lockSettings;
@@ -570,6 +698,9 @@ function handleEffect(effect) {
       showToast(effect.pun);
       api.notify('BEE Timer 🐝', effect.pun).catch(() => {});
       break;
+    case 'swarm':
+      playSwarm(effect);
+      break;
     case 'bees':
       unlockAudio();
       playBuzz(effect.durationMs || 4000);
@@ -588,7 +719,7 @@ function handleEffect(effect) {
       break;
   }
 
-  if (config.notifyAllEvents && effect.type !== 'pun') {
+  if (config.notifyAllEvents && effect.type !== 'pun' && effect.type !== 'swarm') {
     const message = describeEffect(effect);
     if (message) {
       api.notify('BEE Timer 🐝', message).catch(() => {});
@@ -664,11 +795,50 @@ async function loadIntegration() {
   }
 }
 
-function showToast(text) {
+function showToast(text, swarmKind = null) {
   clearTimeout(toastTimer);
+  els.toast.classList.remove('swarm-blessed', 'swarm-demonic');
+  if (swarmKind === 'blessed' || swarmKind === 'demonic') {
+    els.toast.classList.add(`swarm-${swarmKind}`);
+  }
   els.toastText.textContent = text;
   els.toast.classList.remove('hidden');
-  toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 4500);
+  toastTimer = setTimeout(() => {
+    els.toast.classList.add('hidden');
+    els.toast.classList.remove('swarm-blessed', 'swarm-demonic');
+  }, swarmKind ? 3600 : 4500);
+}
+
+function playSwarm(effect) {
+  const { kind, units, rare } = effect;
+  const label = rare
+    ? (kind === 'blessed'
+      ? `RARE BLESSED SWARM — ×${units} blessings!`
+      : `RARE DEMONIC SWARM — ×${units} curses!`)
+    : (kind === 'blessed' ? 'A happy swarm blesses you!' : 'An angry swarm curses you!');
+
+  clearTimeout(swarmThemeTimer);
+  clearTimeout(swarmOverlayTimer);
+  els.app.classList.remove('swarm-blessed', 'swarm-demonic');
+  els.app.classList.add(`swarm-${kind}`);
+  swarmThemeTimer = setTimeout(() => els.app.classList.remove(`swarm-${kind}`), rare ? 3000 : 1500);
+
+  if (compactMode) {
+    // Compact mode: just tint the background and show a small label popup.
+    showToast(label, kind);
+  } else if (rare) {
+    // Rare swarms take over the whole timer screen.
+    els.swarmOverlay.className = `swarm-overlay ${kind} rare`;
+    els.swarmLabel.textContent = label;
+    swarmOverlayTimer = setTimeout(() => {
+      els.swarmOverlay.className = 'swarm-overlay hidden';
+      els.swarmLabel.textContent = '';
+    }, 3000);
+  } else {
+    showToast(label, kind);
+  }
+
+  api.notify('BEE Timer 🐝', label).catch(() => {});
 }
 
 function spawnSwarm(ms, count = 18) {

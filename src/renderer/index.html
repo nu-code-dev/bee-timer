@@ -67,8 +67,17 @@
 
       <!-- ============ FLOATING TIMER WIDGET ============ -->
       <section id="timerScreen" class="screen hidden">
+        <button id="compactExitBtn" class="compact-exit" title="Exit compact mode" aria-label="Exit compact mode">⤢</button>
         <div class="timer">
           <div class="time-block">
+            <div class="duration-edit-row">
+              <button id="durationEditBtn" class="duration-edit" title="Click to edit the starting duration. Only available before the timer runs.">10:00 · click to edit</button>
+              <form id="durationEditForm" class="duration-edit-form hidden">
+                <input id="durationEditInput" type="text" inputmode="numeric" spellcheck="false" aria-label="Starting duration as mm:ss" placeholder="mm:ss">
+                <button type="submit" class="mini-btn" title="Save duration">✓</button>
+                <button type="button" id="durationEditCancel" class="mini-btn ghost" title="Cancel">✕</button>
+              </form>
+            </div>
             <div id="formatBadge" class="format-badge hidden">formatting chaos</div>
             <div id="timeDisplay" class="time-display">10:00</div>
             <div class="second-meter">
@@ -85,6 +94,7 @@
               <button id="pauseBtn" class="pill-btn">Pause</button>
               <button id="resetBtn" class="pill-btn ghost">Reset</button>
               <button id="settingsBtn" class="icon-btn big" title="Settings" aria-label="Settings">⚙️</button>
+              <button id="compactBtn" class="icon-btn big" title="Compact mode — timer only" aria-label="Compact mode">▭</button>
             </div>
             <div class="controls-status">
               <span id="freezeChip" class="status-chip hidden">❄️ frozen</span>
@@ -221,6 +231,8 @@ windowrulev2 = pin,class:^(bee-timer)$</pre>
           <div id="settingsFeatures" class="feature-list"></div>
           <div class="feature-group-title advanced-title">Advanced · don't touch</div>
           <div id="settingsAdvancedFeatures" class="feature-list"></div>
+          <div class="feature-group-title swarm-title">Swarms</div>
+          <div id="settingsSwarmFeatures" class="feature-list"></div>
 
           <div class="panel">
             <div class="panel-head"><h2>App</h2></div>
@@ -233,7 +245,7 @@ windowrulev2 = pin,class:^(bee-timer)$</pre>
               <input id="onTopToggle" type="checkbox" class="switch">
             </label>
             <label class="switch-row">
-              <span><strong>Reduce motion</strong><small>Stops swarms, screen shake and other big animations for a calmer, accessible experience. Short fades stay.</small></span>
+              <span><strong>Reduce motion</strong><small>Stops swarms, screen shake and other big animations, and hides the seconds count bar (which can flicker at high speed). Short fades stay.</small></span>
               <input id="reducedMotionToggle" type="checkbox" class="switch">
             </label>
             <label class="switch-row">
@@ -255,6 +267,11 @@ windowrulev2 = pin,class:^(bee-timer)$</pre>
         </div>
       </section>
     </main>
+
+    <div id="swarmOverlay" class="swarm-overlay hidden" aria-hidden="true">
+      <div class="swarm-fx"></div>
+      <div class="swarm-label" id="swarmLabel"></div>
+    </div>
   </div>
   <script type="module" src="app.js"></script>
 </body>
