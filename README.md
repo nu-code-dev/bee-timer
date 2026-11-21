@@ -1,16 +1,30 @@
 # 🐝 BEE Timer
 
-**A floating, always-on-top countdown that lies to you, sabotages you, and occasionally goes backwards.** A bee-themed love letter to [DougDoug's chaotic countdown timer](https://youtu.be/FTUdUAfcsfY).
+**A floating, always-on-top study/work timer that refuses to let you stop early.** Start a focus block and the timer fights back — extra seconds, extra minutes, doubled time, freezes, scrambled formatting, warped tick speeds, bee puns, and a literal buzzing bee. Perfect for beating procrastination by making the finish line wonderfully unreliable.
+
+A bee-themed love letter to [DougDoug's chaotic countdown timer](https://youtu.be/FTUdUAfcsfY).
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-f5b301.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-6b4f1d.svg)](#install)
 [![Electron](https://img.shields.io/badge/Electron-45-9feaf9.svg)](https://www.electronjs.org/)
 
-Set a duration — 10 minutes by default — and hit Start. The timer then does its best to make sure the stream never ends: extra seconds, extra minutes, doubled time, freezes, scrambled formatting, warped tick speeds, bee puns, random window teleports, and a literal buzzing bee sound. The clock says ten minutes. The clock is lying.
+Set a study or work block — 10 minutes by default, or 25/50 minutes for a proper pomodoro-style session — and hit Start. The timer then does its best to keep you going: it adds seconds, adds minutes, doubles what's left, freezes, scrambles the display, warps how long a second lasts, fires bee puns, and occasionally buzzes at you. You can't trust the clock, so the only sensible move is to keep working until the bees finally relent.
 
 <p align="center">
   <img src="docs/screenshot-wizard.png" alt="BEE Timer onboarding wizard: choose a duration, arm the chaos" width="820">
 </p>
+
+## Why it works as a study / work timer
+
+Procrastination thrives on the exit door being one glance away. BEE Timer makes that door move.
+
+- **It removes the "just quit now" option.** The countdown can grow, freeze, or double, so stopping early feels like losing to a bee. You stay in the chair.
+- **Sessions naturally run longer.** +1s, +1m and Double Time events stretch a short block into a longer one. Set 25 or 50 minutes and let it overrun — that's the feature, not a bug.
+- **Breaks instead of quitting.** Rest Mode pauses the clock for a skippable 3-minute break, so you can recover without abandoning the session.
+- **Less clock-watching.** Formatting Chaos swaps minutes/seconds and rounds the display, breaking the habit of staring at the timer instead of the task.
+- **Momentum through nonsense.** Bee puns, the chaos log, and the occasional swarm keep the session playful enough that you don't negotiate your way out of it.
+
+It's not productivity magic — it's a timer that turns "one more minute" from a guilty excuse into the actual rules of the game. Use it for studying, focused work, writing, revision, or a stream challenge; the duration and every effect are yours to tune.
 
 ## Features
 
@@ -42,13 +56,17 @@ Other touches: draggable frameless titlebar, pin/always-on-top button, pulse met
 
 ## Install
 
-### Arch Linux (recommended: AUR)
+### Arch Linux
+
+> **AUR status: package prepared, not yet published.** The `bee-timer-bin` package is submission-ready in [`packaging/arch/`](packaging/arch/) (PKGBUILD + `.SRCINFO` + desktop entry + icon), but new AUR packages must be created from the maintainer's AUR account through the web interface, then pushed over SSH. Until it's published, build it locally:
 
 ```bash
-yay -S bee-timer-bin      # or: paru -S bee-timer-bin
+git clone https://github.com/nu-code-dev/bee-timer.git
+cd bee-timer/packaging/arch
+makepkg -si
 ```
 
-The AUR package installs the release AppImage to `/opt/bee-timer/` behind a `/usr/bin/bee-timer` wrapper, plus a desktop entry. If the AppImage will not start, install FUSE 2: `sudo pacman -S fuse2`.
+That installs the release AppImage to `/opt/bee-timer/` behind a `/usr/bin/bee-timer` wrapper, plus a desktop entry and icon. Once the package is on the AUR, `yay -S bee-timer-bin` / `paru -S bee-timer-bin` will work as usual. If the AppImage will not start, install FUSE 2: `sudo pacman -S fuse2`.
 
 ### Direct download (Linux)
 
@@ -180,7 +198,7 @@ packaging/     arch/ PKGBUILD, desktop entry, Hyprland snippet
 - **Tray icon** and run-state recovery (resume a countdown after relaunch).
 - **Auto-updater** with signed release feeds.
 - **Code signing / notarization** for Windows and macOS.
-- **Flatpak** and an AUR source package (`bee-timer`) alongside the binary package.
+- **Flatpak** and an AUR source package (`bee-timer`) alongside the submission-ready binary package (`bee-timer-bin`, see [`packaging/arch/`](packaging/arch/)).
 
 ## Acknowledgements
 

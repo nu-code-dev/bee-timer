@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet. The hive is resting.
+### Changed
+
+- Repositioned the project as a **study/work timer** that fights procrastination and stretches focus sessions; added a "Why it works as a study / work timer" section to the README.
+- `packaging/arch/`: made the `bee-timer-bin` PKGBUILD submission-ready — real AppImage checksum, generated `.SRCINFO`, and documented AUR publishing steps. The README no longer claims the package is already published to the AUR.
 
 ## [0.1.0] - 2026-11-21
 

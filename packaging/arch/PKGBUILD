@@ -1,26 +1,23 @@
 # Maintainer: nu-code-dev <nu-code-dev@users.noreply.github.com>
 # AUR package: bee-timer-bin
 #
-# BEE Timer — a chaotic, always-on-top, bee-themed countdown timer.
+# BEE Timer — a chaotic study/work countdown timer that fights procrastination.
 # This package wraps the prebuilt AppImage from GitHub Releases.
 #
 # Regenerate the AUR metadata after any change to this file:
 #     makepkg --printsrcinfo > .SRCINFO
 #
-# TODO before submitting/updating on the AUR:
-#   * Replace the AppImage checksum below with the real one. After a successful
-#     `makepkg -g -f` (or by downloading the asset), paste the sha256 here.
-#     SKIP is used for now because the v0.1.0 release asset was not yet
-#     published when this file was written.
-#   * Confirm the release asset name matches the URL below:
-#       https://github.com/nu-code-dev/bee-timer/releases/download/v0.1.0/bee-timer-0.1.0-x86_64.AppImage
-#     electron-builder derives it from artifactName:
-#       bee-timer-${version}-${arch}.${ext}
+# AUR submission requires the maintainer's AUR account: create the package
+# through the AUR web interface, register an SSH key, then push this directory
+# as a git repo (ssh://aur@aur.archlinux.org/bee-timer-bin.git).
+#
+# The source checksum below was verified against the published v0.1.0 release
+# asset (electron-builder artifactName: bee-timer-${version}-${arch}.${ext}).
 
 pkgname=bee-timer-bin
 pkgver=0.1.0
 pkgrel=1
-pkgdesc='Chaotic bee-themed countdown timer that sabotages you (DougDoug-inspired)'
+pkgdesc='Chaotic study/work countdown timer that fights procrastination (DougDoug-inspired)'
 arch=('x86_64')
 url='https://github.com/nu-code-dev/bee-timer'
 license=('MIT')
@@ -55,7 +52,7 @@ sha256sums=(
 # Prebuilt release asset.
 _appimage="bee-timer-${pkgver}-x86_64.AppImage"
 source_x86_64=("$url/releases/download/v$pkgver/$_appimage")
-sha256sums_x86_64=('SKIP')  # TODO: replace with the real sha256 of the release AppImage
+sha256sums_x86_64=('42b2916435510e750a2ac0cb626c002b3a482f824231a1f817b799c3dcffb1a0')
 
 package() {
   # The AppImage itself, kept read-only under /opt.
