@@ -153,7 +153,7 @@ The class is `bee-timer` via `--class=bee-timer`; verify with `hyprctl clients` 
 Known on 0.57. Put rules in `hyprland.conf` and `hyprctl reload` instead. This is a Hyprland runtime dispatcher limitation, not an app error.
 
 **AppImage won't launch.**
-Electron AppImages need FUSE 2: `sudo pacman -S fuse2`. Alternatively use the AUR package or the `.deb`/unpacked build.
+Electron AppImages need FUSE 2: `sudo pacman -S fuse2`. Alternatively use the one-line installer (`install.sh`, which extracts the AppImage and needs no FUSE), the `.deb`, or an unpacked build.
 
 **Two timers?**
 The app takes a single-instance lock; launching it again focuses the existing window instead of opening a second one.

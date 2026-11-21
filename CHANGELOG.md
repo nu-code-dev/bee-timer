@@ -7,10 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet. The hive is resting.
+
+## [0.1.1] - 2026-11-21
+
+### Added
+
+- `install.sh`: optional one-line, no-sudo Linux installer. Downloads the latest
+  release AppImage, extracts it (no FUSE 2 required) into `~/.local/opt/bee-timer/`,
+  adds a `bee-timer` command and a desktop entry + icon for the application menu.
+  Supports `BEE_TIMER_PREFIX`, `BEE_TIMER_VERSION`, and `--uninstall`.
+- Windows and macOS artifacts are now attached to the release by CI.
+
 ### Changed
 
-- Repositioned the project as a **study/work timer** that fights procrastination and stretches focus sessions; added a "Why it works as a study / work timer" section to the README.
-- `packaging/arch/`: made the `bee-timer-bin` PKGBUILD submission-ready — real AppImage checksum, generated `.SRCINFO`, and documented AUR publishing steps. The README no longer claims the package is already published to the AUR.
+- Repositioned the project as a **study/work timer** that fights procrastination
+  and stretches focus sessions; added a "Why it works as a study / work timer"
+  section to the README.
+- AUR: `bee-timer-bin` is submission-ready, but new AUR account registration is
+  currently blocked, so the README now states it is not published and points to
+  the installer / AppImage / `.deb` instead.
 
 ## [0.1.0] - 2026-11-21
 

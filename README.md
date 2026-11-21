@@ -56,9 +56,23 @@ Other touches: draggable frameless titlebar, pin/always-on-top button, pulse met
 
 ## Install
 
+### One-line install (Linux, optional)
+
+No AUR account, no build tools, no sudo. Installs the latest release AppImage **extracted** into `~/.local/opt/bee-timer/` (so FUSE 2 is not required), adds a `bee-timer` command, and registers **BEE Timer** in your application menu:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash
+```
+
+- x86_64 Linux, fully user-local (nothing outside `~/.local`)
+- uninstall with: `curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash -s -- --uninstall`
+- `BEE_TIMER_PREFIX=/usr/local` with `sudo` for a system-wide install, `BEE_TIMER_VERSION=0.1.1` to pin a release
+- completely optional — the AUR package, AppImage, `.deb`, and source builds below all still work
+
+
 ### Arch Linux
 
-> **AUR status: package prepared, not yet published.** The `bee-timer-bin` package is submission-ready in [`packaging/arch/`](packaging/arch/) (PKGBUILD + `.SRCINFO` + desktop entry + icon), but new AUR packages must be created from the maintainer's AUR account through the web interface, then pushed over SSH. Until it's published, build it locally:
+> **AUR status: not published — account registration is currently blocked.** The `bee-timer-bin` package is submission-ready in [`packaging/arch/`](packaging/arch/) (PKGBUILD + `.SRCINFO` + real checksum + desktop entry + icon), but new AUR account registration is currently unavailable, so it cannot be submitted yet. When registration reopens, the prepared package can be published as-is. Until then, use the one-line installer above, the AppImage/`.deb`, or build it locally:
 
 ```bash
 git clone https://github.com/nu-code-dev/bee-timer.git
@@ -70,20 +84,20 @@ That installs the release AppImage to `/opt/bee-timer/` behind a `/usr/bin/bee-t
 
 ### Direct download (Linux)
 
-Grab `bee-timer-0.1.0-x86_64.AppImage` or `bee-timer-0.1.0-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.0`):
+Grab `bee-timer-0.1.1-x86_64.AppImage` or `bee-timer-0.1.1-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.1`):
 
 ```bash
 # AppImage
-chmod +x bee-timer-0.1.0-x86_64.AppImage
-./bee-timer-0.1.0-x86_64.AppImage
+chmod +x bee-timer-0.1.1-x86_64.AppImage
+./bee-timer-0.1.1-x86_64.AppImage
 
 # Debian / Ubuntu
-sudo apt install ./bee-timer-0.1.0-amd64.deb
+sudo apt install ./bee-timer-0.1.1-amd64.deb
 ```
 
 ### Windows and macOS
 
-Windows (`NSIS` installer, `.exe`) and macOS (`.dmg`) builds are produced by GitHub Actions on every release — see [Releases](https://github.com/nu-code-dev/bee-timer/releases). They are **unsigned**:
+Windows (`NSIS` installer, `bee-timer-0.1.1-x64.exe`) and macOS (`bee-timer-0.1.1-arm64.dmg`, Apple Silicon) builds are produced by GitHub Actions on every release — see [Releases](https://github.com/nu-code-dev/bee-timer/releases). **Windows/macOS builds are CI-produced and unsigned; they are not smoke-tested on real Windows/macOS hardware by the maintainer yet.** They are **unsigned**:
 
 - **Windows:** SmartScreen will show "Windows protected your PC" → *More info* → *Run anyway*.
 - **macOS:** Gatekeeper will block the app → right-click the app → *Open*, or allow it under *System Settings → Privacy & Security*.
@@ -164,7 +178,7 @@ npm run dist:win     # Windows installer — run on Windows or CI
 npm run dist:mac     # macOS .dmg — run on macOS or CI
 ```
 
-Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.0-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.0-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
+Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.1-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.1-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
 
 ## Testing
 
