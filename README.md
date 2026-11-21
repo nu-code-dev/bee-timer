@@ -8,6 +8,14 @@ A bee-themed love letter to [DougDoug's chaotic countdown timer](https://youtu.b
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-6b4f1d.svg)](#install)
 [![Electron](https://img.shields.io/badge/Electron-45-9feaf9.svg)](https://www.electronjs.org/)
 
+<p align="center">
+  <a href="#install"><strong>Skip to install ↓</strong></a>
+  &nbsp;·&nbsp; <a href="#linux">Linux</a>
+  &nbsp;·&nbsp; <a href="#windows">Windows</a>
+  &nbsp;·&nbsp; <a href="#macos">macOS</a>
+  &nbsp;·&nbsp; <a href="#build-from-source">Build from source</a>
+</p>
+
 Set a study or work block — 10 minutes by default, or 25/50 minutes for a proper pomodoro-style session — and hit Start. The timer then does its best to keep you going: it adds seconds, adds minutes, doubles (or halves) what's left, freezes, scrambles the display, warps how long a second lasts, sends supportive bee messages, and occasionally buzzes at you. You can't trust the clock, so the only sensible move is to keep working until the bees finally relent.
 
 <p align="center">
@@ -62,6 +70,14 @@ Other touches: draggable frameless titlebar, pin/always-on-top button, pulse met
 
 ## Install
 
+<p><strong>Jump to:</strong>
+<a href="#linux">Linux</a> ·
+<a href="#windows">Windows</a> ·
+<a href="#macos">macOS</a> ·
+<a href="#build-from-source">Build from source</a>
+</p>
+
+<a id="linux"></a>
 ### One-line install (Linux, optional)
 
 No AUR account, no build tools, and no sudo for the app itself. Installs the latest release AppImage **extracted** into `~/.local/opt/bee-timer/` (so FUSE 2 is not required), adds a `bee-timer` command, and registers **BEE Timer** in your application menu:
@@ -111,14 +127,22 @@ chmod +x bee-timer-0.1.3-x86_64.AppImage
 sudo apt install ./bee-timer-0.1.3-amd64.deb
 ```
 
-### Windows and macOS
+<a id="windows"></a>
+### Windows
 
-Windows (`NSIS` installer, `bee-timer-0.1.3-x64.exe`) and macOS (`bee-timer-0.1.3-arm64.dmg`, Apple Silicon) builds are produced by GitHub Actions on every release — see [Releases](https://github.com/nu-code-dev/bee-timer/releases). **Windows/macOS builds are CI-produced and unsigned; they are not smoke-tested on real Windows/macOS hardware by the maintainer yet.** They are **unsigned**:
+Download the [`bee-timer-0.1.3-x64.exe`](https://github.com/nu-code-dev/bee-timer/releases/tag/v0.1.3) NSIS installer from [Releases](https://github.com/nu-code-dev/bee-timer/releases). It is built by GitHub Actions on every release and is **unsigned**:
 
-- **Windows:** SmartScreen will show "Windows protected your PC" → *More info* → *Run anyway*.
-- **macOS:** Gatekeeper will block the app → right-click the app → *Open*, or allow it under *System Settings → Privacy & Security*.
+- SmartScreen will show *"Windows protected your PC"* → click **More info** → **Run anyway**.
+- Windows builds are **x64 only** and are CI-produced; they are not smoke-tested on real Windows hardware by the maintainer yet.
 
-macOS builds are not notarized; there is no auto-updater. If you prefer, build from source below.
+<a id="macos"></a>
+### macOS
+
+Download the [`bee-timer-0.1.3-arm64.dmg`](https://github.com/nu-code-dev/bee-timer/releases/tag/v0.1.3) disk image from [Releases](https://github.com/nu-code-dev/bee-timer/releases). It is **Apple Silicon only** (the CI runner is `macos-latest`/arm64), unsigned and not notarized:
+
+- Gatekeeper will block the app → right-click the app → **Open**, or allow it under **System Settings → Privacy & Security**.
+- Intel Macs would need a separate build (not configured in CI yet); building from source below also works.
+- There is no auto-updater; upgrade by downloading the next release.
 
 ## Hyprland quickstart
 
