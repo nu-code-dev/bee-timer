@@ -32,7 +32,7 @@ function cacheEls() {
     'wizardScreen', 'timerScreen', 'settingsScreen', 'wizardFeatures', 'settingsFeatures',
     'settingsAdvancedFeatures',
     'advancedPanel', 'advancedToggle', 'durationInput', 'durationHint', 'startBtn',
-    'timeDisplay', 'formatBadge', 'secondLen', 'pulseFill', 'freezeChip', 'restChip',
+    'timeDisplay', 'formatChip', 'secondLen', 'pulseFill', 'freezeChip', 'restChip',
     'speedChip', 'pauseChip', 'pauseBtn', 'resetBtn', 'settingsBtn', 'logList',
     'restOverlay', 'restCountdown', 'restProgressFill', 'skipRestBtn',
     'endOverlay', 'endStats', 'runBackBtn', 'endSettingsBtn', 'toast', 'toastText',
@@ -325,12 +325,12 @@ function buildFeatureRow(feature) {
   // Per-tick chance (%) — editable, so descriptions never hard-code percentages.
   const chance = document.createElement('label');
   chance.className = 'chance-field';
-  chance.title = 'Chance per tick (%) — arrow keys change it by 0.5%';
+  chance.title = `Chance per tick (%) — arrow keys change it by ${feature.chanceStep ?? 0.5}%`;
   const chanceInput = document.createElement('input');
   chanceInput.type = 'number';
   chanceInput.min = '0';
   chanceInput.max = '100';
-  chanceInput.step = '0.5';
+  chanceInput.step = String(feature.chanceStep ?? 0.5);
   chanceInput.dataset.chanceForKey = feature.key;
   chanceInput.value = String(config.features[feature.key].chancePct);
   chanceInput.addEventListener('change', () => {
@@ -521,7 +521,7 @@ function bindTimer() {
     engine.reset();
     hideEndScreen();
     // Reset while running restarts immediately; Stop (paused) stays stopped.
-    if (wasRunning && !wasPaused) engine.start();
+    if (wasRunning && !wasPaused) engine.start('reset');
     render(engine.snapshot());
   });
   els.compactBtn.addEventListener('click', toggleCompact);
@@ -546,7 +546,7 @@ function bindTimer() {
   els.runBackBtn.addEventListener('click', () => {
     hideEndScreen();
     engine?.reset();
-    engine?.start();
+    engine?.start('reset');
   });
   els.endSettingsBtn.addEventListener('click', () => showScreen('settings'));
 }
@@ -573,7 +573,10 @@ function render(snapshot) {
   els.timeDisplay.textContent = snapshot.display;
   els.timeDisplay.classList.toggle('chaos-swap', snapshot.formatKind === 'swap');
   els.timeDisplay.classList.toggle('chaos-round', snapshot.formatKind === 'round');
-  els.formatBadge.classList.toggle('hidden', !snapshot.formatKind);
+  els.formatChip.classList.toggle('hidden', !snapshot.formatKind);
+  if (snapshot.formatKind) {
+    els.formatChip.textContent = snapshot.formatKind === 'swap' ? '🔀 swapped' : '🔀 rounded';
+  }
   els.secondLen.textContent = `${(snapshot.tickLengthMs / 1000).toFixed(1)}s`;
 
   els.freezeChip.classList.toggle('hidden', snapshot.frozenTicks <= 0);
@@ -733,7 +736,7 @@ function describeEffect(effect) {
     case 'add-second': return '+1 second. The timer is being petty.';
     case 'add-minute': return '+1 minute. Bold of you to think you were close.';
     case 'double': return 'Remaining time DOUBLED. Why. Just why.';
-    case 'halve': return 'Remaining time cut in half. Brutal.';
+    case 'halve': return 'Remaining time cut in half. Finally, some good news.';
     case 'freeze': return `Timer frozen for ${effect.cycles ?? 5} cycles.`;
     case 'format': return effect.kind === 'swap'
       ? 'Formatting chaos: minutes and seconds swapped.'

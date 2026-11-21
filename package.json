@@ -1,6 +1,6 @@
 {
   "name": "bee-timer",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "BEE Timer — a chaotic study/work countdown timer that fights procrastination and stretches your focus sessions. Bee-themed, always-on-top, DougDoug-inspired.",
   "productName": "BEE Timer",
   "main": "src/main/main.js",

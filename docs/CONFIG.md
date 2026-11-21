@@ -40,9 +40,9 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
 | `addSecond` | `true` | `5` | — | Adds 1 second (clamped by `maxRemainingMs`). |
 | `addMinute` | `true` | `1` | — | Adds 60 seconds (clamped by `maxRemainingMs`). |
 | `doubleTime` | `true` | `1` | — | Doubles remaining time, capped at 24h. |
-| `halveTime` | `true` | `1` | — | Cuts remaining time in half (never below 1 second until the timer ends). |
+| `halveTime` | `true` | `1` | — | Cuts remaining time in half (never below 1 second until the timer ends). A mercy, not a curse. |
 | `freeze` | `true` | `5` | `cycles`: `5` (1–60) | Pauses the countdown for N ticks. |
-| `formatChaos` | `true` | `5` | `swapMinSec`: `true`; `roundNearestMinute`: `true`; `durationTicks`: `3` (1–60) | Display-only chaos for N ticks: swap minutes/seconds or round to the nearest minute. Never changes real remaining time. |
+| `formatChaos` | `true` | `5` | `swapMinSec`: `true`; `roundNearestMinute`: `true`; `durationTicks`: legacy/unused | Display-only, **sticky** chaos: swaps the two biggest units (hours↔minutes when the clock has hours, otherwise minutes↔seconds), or rounds to the nearest minute. It now stays applied until reset or another formatting event, and never changes the real remaining time. |
 | `speedDistortion` | `true` | `10` | `multipliers`: `[0.5, 2]` (only 0.5 and 2 are valid); `durationTicks`: `4` (1–60, editable in Settings) | Scales the real length of the next N ticks. 0.5× = 2s real per game second; 2× = 0.5s real. |
 | `distortingChaos` | `true` | `1` | — | Only active while `speedDistortion.enabled` is true (the sanitizer forces it off otherwise). Makes speed distortion **permanent and compounding**: each trigger multiplies the current speed (1× → 2× → 4×, or back down with 0.5×). While enabled, `speedDistortion`'s chance and `durationTicks` are ignored — this chance is used instead, and the speed never expires. |
 | `windowChaos` | `false` | `1` | `marginPx`: `40` (0–400) | Randomly moves the window within the current monitor's work area (uses `hyprctl eval` on Hyprland when native moves are ignored). Hidden under "Advanced · don't touch". |

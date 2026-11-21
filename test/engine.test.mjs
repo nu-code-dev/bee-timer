@@ -85,6 +85,8 @@ test('formatRemaining: normal, swap, and round modes', () => {
   assert.equal(formatRemaining(600_000, 'swap'), '00:10');
   assert.equal(formatRemaining(59_000, 'swap'), '59:00');
   assert.equal(formatRemaining(544_000, 'round'), '09:00');
+  assert.equal(formatRemaining(3_723_000, 'swap'), '02:01:03'); // hours <-> minutes
+
   assert.equal(formatRemaining(586_000, 'round'), '10:00');
 });
 
@@ -152,7 +154,7 @@ test('freeze pauses the countdown for the configured cycles', () => {
   assert.equal(snap.frozenTicks, 0);
 });
 
-test('formatting chaos is display-only and expires', () => {
+test('formatting chaos is display-only and sticky until reset', () => {
   const config = makeConfig({
     durationMs: 10_000,
     features: {
@@ -172,10 +174,11 @@ test('formatting chaos is display-only and expires', () => {
   assert.equal(snap.rawDisplay, '00:09');
   assert.equal(snap.display, '09:00');
   assert.equal(snap.formatKind, 'swap');
-  step(3);
+  step(5);
+  assert.equal(snap.formatKind, 'swap'); // stays applied (no glitchy revert)
+  assert.equal(snap.remainingMs, 4000);
+  engine.reset();
   assert.equal(snap.formatKind, null);
-  assert.equal(snap.remainingMs, 6000);
-  assert.equal(snap.display, '00:06');
 });
 
 test('speed distortion scales real tick length and expires', () => {
@@ -352,4 +355,12 @@ test('rare swarm uses 5 units and is flagged rare', () => {
   engine.start();
   step(1);
   assert.ok(effects.some((e) => e.type === 'swarm' && e.rare === true && e.units === 5));
+});
+
+
+test('starting after reset logs the luck message', () => {
+  const { engine, step } = harness(makeConfig());
+  engine.start('reset');
+  step(1);
+  assert.ok(engine.snapshot().log.some((entry) => entry.text.includes("try your luck")));
 });

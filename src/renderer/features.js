@@ -34,7 +34,7 @@ export const FEATURES = [
     key: 'halveTime',
     icon: '➗',
     title: 'Halve Time',
-    desc: 'Cuts your remaining time in half. Brutal.',
+    desc: 'Cuts your remaining time in half. A gift from the hive.',
     group: 'core',
   },
   {
@@ -100,6 +100,7 @@ export const FEATURES = [
     icon: '🌟',
     title: 'Rare Swarms',
     desc: 'A rare blessed or demonic swarm: ×5 of every good or bad effect. Whole-screen event.',
+    chanceStep: 0.05,
     group: 'swarm',
   },
   {
@@ -107,6 +108,7 @@ export const FEATURES = [
     icon: '🐝',
     title: 'Common Swarms',
     desc: 'A happy or angry swarm: ×1 of every good or bad effect. Themed popup.',
+    chanceStep: 0.05,
     group: 'swarm',
   },
 ];

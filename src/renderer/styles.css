@@ -1091,3 +1091,19 @@ body.reduced-motion .swarm-label { animation: none !important; }
   .settings { padding-left: 14px; padding-right: 14px; }
 }
 .swarm-title { color: var(--honey); }
+
+/* ==================== rare swarm label: always fit the window ============ */
+.swarm-label {
+  max-width: calc(100% - 28px);
+  padding: 8px 12px;
+  font-size: clamp(11px, 3.6vw, 15px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.swarm-overlay.rare .swarm-label {
+  max-width: calc(100% - 32px);
+  padding: 10px 14px;
+  font-size: clamp(12px, 4vw, 16px);
+}
+.controls-status { max-width: 60%; gap: 3px; }

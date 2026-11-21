@@ -50,7 +50,8 @@ export function formatRemaining(ms, formatKind = null) {
     return hh > 0 ? `${hh}:${pad(mm)}:00` : `${pad(mm)}:00`;
   }
   if (formatKind === 'swap') {
-    return h > 0 ? `${h}:${pad(s)}:${pad(m)}` : `${pad(s)}:${pad(m)}`;
+    // With hours on the clock, swap the two most significant units (h <-> m).
+    return h > 0 ? `${pad(m)}:${pad(h)}:${pad(s)}` : `${pad(s)}:${pad(m)}`;
   }
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
@@ -145,12 +146,14 @@ export class BeeEngine {
     this.emit();
   }
 
-  start() {
+  start(reason = 'fresh') {
     if (this.ended) this.reset();
     if (this.running) return;
     this.running = true;
     this.paused = false;
-    this.logEvent('🐝', 'Countdown started. Good luck.');
+    this.logEvent('🐝', reason === 'reset'
+      ? "So you've decided to try your luck."
+      : 'Countdown started. Good luck.');
     this.scheduleTick(this.nextTickDelay());
     this.emit();
   }
@@ -322,7 +325,7 @@ export class BeeEngine {
       this.remainingMs = Math.max(1000, Math.floor(this.remainingMs / 2));
       if (this.remainingMs < before) {
         this.stats.halved += 1;
-        this.pushLog('➗', 'Remaining time cut in half. Brutal.');
+        this.pushLog('🎉', 'Remaining time cut in half. Finally, some good news.');
         this.onEffect({ type: 'halve' });
       }
     }
@@ -458,14 +461,18 @@ export class BeeEngine {
     if (feature.roundNearestMinute) options.push('round');
     if (!options.length) return;
     const kind = options[Math.floor(this.rng() * options.length)];
-    const duration = feature.durationTicks ?? 3;
-    this.formatState = { kind, untilTick: this.tick + duration };
+    // Sticky until reset (or until another formatting chaos event): it used to
+    // revert after a few ticks, which read as a display glitch.
+    this.formatState = { kind, untilTick: Infinity };
     this.stats.formats += 1;
+    const hourScale = this.remainingMs >= 3_600_000;
     this.pushLog(
       '🔀',
-      kind === 'swap' ? 'Minutes and seconds swapped. Everything is fine.' : 'Rounded to the nearest minute. Who approved this?',
+      kind === 'swap'
+        ? (hourScale ? 'Hours and minutes swapped. Everything is fine.' : 'Minutes and seconds swapped. Everything is fine.')
+        : 'Rounded to the nearest minute. Who approved this?',
     );
-    this.onEffect({ type: 'format', kind, durationTicks: duration });
+    this.onEffect({ type: 'format', kind });
   }
 
   startRest() {
