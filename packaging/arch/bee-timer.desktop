@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=BEE Timer
+Comment=Chaotic bee-themed countdown timer
+GenericName=Countdown Timer
+Exec=bee-timer %U
+Icon=bee-timer
+Type=Application
+Categories=Utility;Timer;
+StartupWMClass=bee-timer
+StartupNotify=false
+Terminal=false
+Keywords=timer;countdown;bees;chaos;stream;

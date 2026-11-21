@@ -1,0 +1,46 @@
+# BEE Timer — Hyprland window rules
+# ---------------------------------------------------------------------------
+# Copy the block matching your Hyprland version into ~/.config/hypr/hyprland.conf
+# (or a file you `source` from it), then run:
+#
+#     hyprctl reload
+#     hyprctl version     # confirm which rule syntax your build understands
+#
+# Window rules are evaluated when a window OPENS, so restart BEE Timer after
+# adding/changing them. On Hyprland 0.57 the runtime commands
+# `hyprctl keyword windowrulev2 ...` and `hyprctl keyword windowrule ...`
+# both returned "unknown request" — putting the rules in hyprland.conf and
+# reloading works. Rule syntax changed around Hyprland 0.53.
+#
+# The window class is `bee-timer` (the app passes --class=bee-timer).
+# Verify with: hyprctl clients
+# ---------------------------------------------------------------------------
+
+# === Hyprland <= 0.52: windowrulev2 syntax ================================
+windowrulev2 = float,class:^(bee-timer)$
+windowrulev2 = size 400 320,class:^(bee-timer)$
+windowrulev2 = pin,class:^(bee-timer)$
+# Optional: force keyboard focus so Space (pause) always reaches the widget.
+# This can steal focus from games/editors — omit it if that is a problem.
+windowrulev2 = stayfocused,class:^(bee-timer)$
+# Optional: explicit position (absolute layout coordinates; adjust per monitor)
+# windowrulev2 = move 1500 40,class:^(bee-timer)$
+
+# === Hyprland 0.53+: windowrule syntax ====================================
+# Commas followed by spaces; rule name `stay_focused`.
+# windowrule = float, class:^(bee-timer)$
+# windowrule = size 400 320, class:^(bee-timer)$
+# windowrule = pin, class:^(bee-timer)$
+# windowrule = stay_focused, class:^(bee-timer)$
+# windowrule = move 1500 40, class:^(bee-timer)$
+
+# ---------------------------------------------------------------------------
+# Notes
+#  * `pin` shows the timer on every workspace. Remove it to keep it on one.
+#  * `float` is essential: Hyprland otherwise tiles the 400x320 widget.
+#  * Always-on-top comes from the app itself: in the default XWayland mode
+#    Hyprland honors _NET_WM_STATE_ABOVE. Native Wayland (BEE_TIMER_OZONE=
+#    wayland) has no toplevel always-on-top protocol, so pin + this rule set
+#    is your best approximation.
+#  * More: docs/HYPRLAND.md in the BEE Timer repository.
+# ---------------------------------------------------------------------------

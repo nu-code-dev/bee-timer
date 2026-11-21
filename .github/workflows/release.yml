@@ -1,0 +1,140 @@
+name: Release
+
+# Triggered by pushing a tag like v0.1.0. Builds each platform on its own
+# runner, then attaches the artifacts to a GitHub Release.
+#
+# Builds are UNSIGNED: no code-signing certificates or notarization are
+# configured. Windows SmartScreen and macOS Gatekeeper will warn users.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # npm ci when possible; fall back to npm install (e.g. if the lockfile
+      # is missing or npm's script policy blocks the ci path).
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            if npm ci --no-audit --no-fund; then
+              echo "npm ci succeeded"
+            else
+              echo "::warning::npm ci failed — falling back to npm install"
+              npm install --no-audit --no-fund
+            fi
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      # Newer npm versions can block Electron's postinstall download. If that
+      # happened, run the package's install script manually so electron-builder
+      # can find the runtime to package.
+      - name: Ensure Electron binary is installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node -e "require('electron')" >/dev/null 2>&1; then
+            echo "Electron binary already present"
+          else
+            echo "::warning::Electron binary missing — running install.js manually"
+            XDG_CACHE_HOME="$PWD/.cache" node node_modules/electron/install.js
+          fi
+          node -e "console.log('Electron binary:', require('electron'))"
+
+      - name: Run tests (Linux only)
+        if: runner.os == 'Linux'
+        run: npm test
+
+      # electron-builder targets for the current host are configured in
+      # package.json: Linux AppImage + deb, Windows NSIS, macOS dmg. The
+      # artifactName template is bee-timer-${version}-${arch}.${ext}.
+      # --publish never: this workflow uploads to the Release itself below.
+      - name: Build distributables
+        shell: bash
+        env:
+          # No signing identity configured; make that explicit so macOS builds
+          # don't attempt to discover a keychain identity.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --publish never
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/latest*.yml
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List artifacts (debug)
+        run: ls -lh dist
+
+      # Creates (or updates) the Release for the pushed tag and uploads every
+      # artifact. Glob patterns intentionally mirror the per-OS outputs.
+      # Unsigned binaries: users will see SmartScreen / Gatekeeper warnings.
+      - name: Upload binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: BEE Timer ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          files: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/latest*.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

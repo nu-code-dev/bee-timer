@@ -1,0 +1,83 @@
+name: CI
+
+# Runs on every push and pull request: installs dependencies, runs the chaos
+# engine test suite, and performs an unpacked smoke build with electron-builder.
+# This does NOT publish anything.
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-smoke-build:
+    name: Test + unpacked build (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # npm ci is preferred (reproducible, lockfile-based); fall back to a
+      # normal install if the lockfile is missing/out of sync or ci is blocked
+      # by newer npm script-policy restrictions.
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then
+            if npm ci --no-audit --no-fund; then
+              echo "npm ci succeeded"
+            else
+              echo "::warning::npm ci failed — falling back to npm install"
+              npm install --no-audit --no-fund
+            fi
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      # Newer npm versions may block lifecycle scripts (allowScripts policy),
+      # which means Electron's postinstall never downloads the runtime binary.
+      # The electron package's install.js can always be run manually.
+      - name: Ensure Electron binary is installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node -e "require('electron')" >/dev/null 2>&1; then
+            echo "Electron binary already present"
+          else
+            echo "::warning::Electron binary missing — running install.js manually"
+            XDG_CACHE_HOME="$PWD/.cache" node node_modules/electron/install.js
+          fi
+          node -e "console.log('Electron binary:', require('electron'))"
+
+      - name: Run tests
+        run: npm test
+
+      # Smoke build: packages the app unpacked (dist/linux-unpacked) without
+      # producing AppImage/deb artifacts. Catches packaging-config breakage
+      # without needing fakeroot/dpkg.
+      - name: Unpacked smoke build
+        run: npm run dist:dir
+
+      - name: Upload unpacked build (diagnostics)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-unpacked
+          path: dist/linux-unpacked
+          if-no-files-found: ignore
+          retention-days: 3

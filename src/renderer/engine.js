@@ -1,0 +1,438 @@
+/**
+ * BEE Timer chaos engine.
+ *
+ * Pure ESM, zero Electron imports. Time is driven by an injected `schedule`
+ * function and randomness by an injected `rng`, which makes every chaotic
+ * effect reproducible in tests (seeded RNG + fake scheduler).
+ *
+ * Rules of the game:
+ *  - one tick = one game second, but the *real* tick length is scaled by the
+ *    speed distortion multiplier (0.5x => 2s real, 2x => 0.5s real)
+ *  - formatting chaos is display-only and never mutates the true remaining time
+ *  - freeze pauses the countdown for N ticks while the pulse keeps animating
+ *  - rest mode pauses the countdown for a real 3 minutes, skippable
+ */
+
+import { PUNS } from './puns.js';
+
+export const TICK_BASE_MS = 1000;
+export const DEFAULT_MAX_REMAINING_MS = 24 * 60 * 60 * 1000;
+
+const pad = (n) => String(n).padStart(2, '0');
+
+/** Deterministic PRNG for tests / replay. */
+export function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function rng() {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Render remaining time with optional display-only chaos.
+ * @param {number} ms
+ * @param {null | 'swap' | 'round'} formatKind
+ */
+export function formatRemaining(ms, formatKind = null) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+
+  if (formatKind === 'round') {
+    const totalMinutes = Math.round(totalSeconds / 60);
+    const hh = Math.floor(totalMinutes / 60);
+    const mm = totalMinutes % 60;
+    return hh > 0 ? `${hh}:${pad(mm)}:00` : `${pad(mm)}:00`;
+  }
+  if (formatKind === 'swap') {
+    return h > 0 ? `${h}:${pad(s)}:${pad(m)}` : `${pad(s)}:${pad(m)}`;
+  }
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+/** mm:ss clock for the rest overlay. */
+export function formatRest(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+}
+
+const EMPTY_STATS = () => ({
+  ticks: 0,
+  secondsAdded: 0,
+  minutesAdded: 0,
+  doubles: 0,
+  freezes: 0,
+  formats: 0,
+  speeds: 0,
+  windowTeleports: 0,
+  beeModes: 0,
+  puns: 0,
+  rests: 0,
+});
+
+export class BeeEngine {
+  /**
+   * @param {object} opts
+   * @param {object} opts.config sanitized config object
+   * @param {() => number} [opts.rng]
+   * @param {(fn: Function, delay: number) => any} [opts.schedule]
+   * @param {(handle: any) => void} [opts.cancel]
+   * @param {() => number} [opts.now]
+   * @param {(snapshot: object) => void} [opts.onChange]
+   * @param {(effect: object) => void} [opts.onEffect]
+   */
+  constructor({
+    config,
+    rng = Math.random,
+    schedule = (fn, delay) => setTimeout(fn, delay),
+    cancel = (handle) => clearTimeout(handle),
+    now = () => Date.now(),
+    onChange = () => {},
+    onEffect = () => {},
+  }) {
+    this.config = config;
+    this.rng = rng;
+    this.schedule = schedule;
+    this.cancel = cancel;
+    this.now = now;
+    this.onChange = onChange;
+    this.onEffect = onEffect;
+
+    this.timerHandle = null;
+    this.log = [];
+    this.logSeq = 0;
+    this.punBag = [];
+    this.tickStartedAt = now();
+    this.reset();
+  }
+
+  // --- lifecycle -------------------------------------------------------------
+
+  reset() {
+    this.cancelTimer();
+    this.remainingMs = this.config.durationMs;
+    this.maxRemainingMs = Math.max(
+      this.config.maxRemainingMs || DEFAULT_MAX_REMAINING_MS,
+      this.config.durationMs,
+    );
+    this.tick = 0;
+    this.running = false;
+    this.paused = false;
+    this.ended = false;
+    this.freezeTicks = 0;
+    this.speedState = { mult: 1, untilTick: 0 };
+    this.formatState = { kind: null, untilTick: 0 };
+    this.rest = null;
+    this.cooldownRemainingMs = 0;
+    this.stats = EMPTY_STATS();
+    this.log = [];
+    this.punBag = [];
+    this.tickStartedAt = this.now();
+    this.emit();
+  }
+
+  start() {
+    if (this.ended) this.reset();
+    if (this.running) return;
+    this.running = true;
+    this.paused = false;
+    this.logEvent('🐝', 'Countdown started. Good luck.');
+    this.scheduleTick(this.nextTickDelay());
+    this.emit();
+  }
+
+  pause() {
+    if (!this.running || this.paused) return;
+    this.paused = true;
+    this.cancelTimer();
+    this.emit();
+  }
+
+  resume() {
+    if (!this.running || !this.paused) return;
+    this.paused = false;
+    this.scheduleTick(this.nextTickDelay());
+    this.emit();
+  }
+
+  togglePause() {
+    if (this.paused) this.resume();
+    else this.pause();
+  }
+
+  destroy() {
+    this.cancelTimer();
+    this.running = false;
+  }
+
+  updateConfig(config) {
+    this.config = config;
+    this.maxRemainingMs = Math.max(
+      config.maxRemainingMs || DEFAULT_MAX_REMAINING_MS,
+      this.remainingMs,
+    );
+    this.emit();
+  }
+
+  skipRest() {
+    if (!this.rest) return;
+    this.finishRest(true);
+    this.emit();
+  }
+
+  // --- tick loop -------------------------------------------------------------
+
+  cancelTimer() {
+    if (this.timerHandle !== null) {
+      this.cancel(this.timerHandle);
+      this.timerHandle = null;
+    }
+  }
+
+  get speedMult() {
+    return this.tick < this.speedState.untilTick ? this.speedState.mult : 1;
+  }
+
+  get formatKind() {
+    return this.tick < this.formatState.untilTick ? this.formatState.kind : null;
+  }
+
+  get isFrozen() {
+    return this.freezeTicks > 0;
+  }
+
+  nextTickDelay() {
+    if (this.rest) return TICK_BASE_MS;
+    return Math.round(TICK_BASE_MS * this.speedMult);
+  }
+
+  scheduleTick(delay = this.nextTickDelay()) {
+    this.cancelTimer();
+    this.tickStartedAt = this.now();
+    this.timerHandle = this.schedule(() => {
+      this.timerHandle = null;
+      this.onTick();
+    }, delay);
+  }
+
+  onTick() {
+    if (!this.running || this.paused || this.ended) return;
+    this.tickStartedAt = this.now();
+
+    // Rest mode: countdown is paused, rest timer counts down in real seconds.
+    if (this.rest) {
+      this.rest.remainingMs = Math.max(0, this.rest.remainingMs - TICK_BASE_MS);
+      if (this.rest.remainingMs === 0) this.finishRest(false);
+      this.emit();
+      if (this.running && !this.paused) this.scheduleTick(TICK_BASE_MS);
+      return;
+    }
+
+    if (this.cooldownRemainingMs > 0) {
+      this.cooldownRemainingMs = Math.max(0, this.cooldownRemainingMs - TICK_BASE_MS);
+    }
+
+    if (this.freezeTicks > 0) {
+      this.freezeTicks -= 1;
+      this.emit();
+      if (this.running && !this.paused) this.scheduleTick(this.nextTickDelay());
+      return;
+    }
+
+    this.tick += 1;
+    this.stats.ticks += 1;
+    this.remainingMs = Math.max(0, this.remainingMs - TICK_BASE_MS);
+    this.applyRandomChaos();
+
+    if (this.remainingMs <= 0) {
+      this.remainingMs = 0;
+      this.ended = true;
+      this.running = false;
+      this.pushLog('🎉', 'Time is up. The stream is over. BEE free!');
+      this.onEffect({ type: 'end' });
+      this.emit();
+      return;
+    }
+
+    this.emit();
+    if (this.running && !this.paused) this.scheduleTick(this.nextTickDelay());
+  }
+
+  // --- chaos ----------------------------------------------------------------
+
+  roll(featureKey) {
+    const feature = this.config.features?.[featureKey];
+    if (!feature || !feature.enabled) return false;
+    return this.rng() * 100 < feature.chancePct;
+  }
+
+  /** Fixed evaluation order keeps effects deterministic for a given RNG stream. */
+  applyRandomChaos() {
+    const features = this.config.features || {};
+
+    if (this.roll('addSecond')) {
+      this.remainingMs = Math.min(this.remainingMs + 1000, this.maxRemainingMs);
+      this.stats.secondsAdded += 1;
+      this.pushLog('⏱️', '+1 second. The timer is being petty.');
+      this.onEffect({ type: 'add-second' });
+    }
+
+    if (this.roll('addMinute')) {
+      this.remainingMs = Math.min(this.remainingMs + 60_000, this.maxRemainingMs);
+      this.stats.minutesAdded += 1;
+      this.pushLog('😈', '+1 minute. Bold of you to think you were close.');
+      this.onEffect({ type: 'add-minute' });
+    }
+
+    if (this.roll('doubleTime')) {
+      const before = this.remainingMs;
+      this.remainingMs = Math.min(this.remainingMs * 2, this.maxRemainingMs);
+      if (this.remainingMs > before) {
+        this.stats.doubles += 1;
+        this.pushLog('✖️', 'Remaining time DOUBLED. Why. Just why.');
+        this.onEffect({ type: 'double' });
+      }
+    }
+
+    if (this.roll('freeze')) {
+      this.freezeTicks = features.freeze?.cycles ?? 5;
+      this.stats.freezes += 1;
+      this.pushLog('❄️', `Timer frozen for ${this.freezeTicks} cycles. Enjoy the stillness.`);
+      this.onEffect({ type: 'freeze' });
+    }
+
+    if (this.roll('formatChaos')) this.triggerFormatChaos();
+
+    if (this.roll('speedDistortion')) {
+      const feature = features.speedDistortion;
+      const multipliers = feature?.multipliers?.length ? feature.multipliers : [0.5, 2];
+      const mult = multipliers[Math.floor(this.rng() * multipliers.length)] ?? 0.5;
+      const duration = feature?.durationTicks ?? 4;
+      this.speedState = { mult, untilTick: this.tick + duration };
+      this.stats.speeds += 1;
+      this.pushLog('🌀', `Time is now ${mult}x speed for ${duration} ticks.`);
+      this.onEffect({ type: 'speed', mult, durationTicks: duration });
+    }
+
+    if (this.roll('windowChaos')) {
+      this.stats.windowTeleports += 1;
+      this.pushLog('🪟', 'The window got bored and moved.');
+      this.onEffect({ type: 'window', marginPx: features.windowChaos?.marginPx ?? 40 });
+    }
+
+    if (this.roll('originalBeeMode')) {
+      const durationMs = features.originalBeeMode?.durationMs ?? 4000;
+      this.stats.beeModes += 1;
+      this.pushLog('🐝', 'ORIGINAL BEE MODE. BZZZZZZZZZ.');
+      this.onEffect({ type: 'bees', durationMs });
+    }
+
+    if (this.roll('beePuns')) {
+      const pun = this.drawPun();
+      this.stats.puns += 1;
+      this.pushLog('💬', pun);
+      this.onEffect({ type: 'pun', pun });
+    }
+
+    if (this.roll('restMode') && !this.rest && this.cooldownRemainingMs === 0) {
+      this.startRest();
+    }
+  }
+
+  triggerFormatChaos() {
+    const feature = this.config.features?.formatChaos;
+    if (!feature) return;
+    const options = [];
+    if (feature.swapMinSec) options.push('swap');
+    if (feature.roundNearestMinute) options.push('round');
+    if (!options.length) return;
+    const kind = options[Math.floor(this.rng() * options.length)];
+    const duration = feature.durationTicks ?? 3;
+    this.formatState = { kind, untilTick: this.tick + duration };
+    this.stats.formats += 1;
+    this.pushLog(
+      '🔀',
+      kind === 'swap' ? 'Minutes and seconds swapped. Everything is fine.' : 'Rounded to the nearest minute. Who approved this?',
+    );
+    this.onEffect({ type: 'format', kind, durationTicks: duration });
+  }
+
+  startRest() {
+    const restMs = this.config.features?.restMode?.restMs ?? 180_000;
+    this.rest = { remainingMs: restMs, totalMs: restMs };
+    this.stats.rests += 1;
+    this.pushLog('🧘', 'Rest mode! Three minutes of peace. You can skip it.');
+    this.onEffect({ type: 'rest-start', restMs });
+  }
+
+  finishRest(skipped) {
+    const cooldownMs = this.config.features?.restMode?.cooldownMs ?? 300_000;
+    this.rest = null;
+    this.cooldownRemainingMs = cooldownMs;
+    this.pushLog(skipped ? '⏭️' : '🌤️', skipped ? 'Rest skipped. Back to chaos.' : 'Rest over. Back to chaos.');
+    this.onEffect({ type: 'rest-end', skipped });
+  }
+
+  drawPun() {
+    if (this.punBag.length === 0) {
+      this.punBag = [...PUNS];
+      for (let i = this.punBag.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(this.rng() * (i + 1));
+        [this.punBag[i], this.punBag[j]] = [this.punBag[j], this.punBag[i]];
+      }
+    }
+    return this.punBag.pop();
+  }
+
+  // --- presentation ---------------------------------------------------------
+
+  pushLog(icon, text) {
+    this.logSeq += 1;
+    this.log.push({ id: this.logSeq, icon, text, at: this.now() });
+    if (this.log.length > 40) this.log.shift();
+  }
+
+  logEvent(icon, text) {
+    this.pushLog(icon, text);
+    this.emit();
+  }
+
+  snapshot() {
+    const speedMult = this.speedMult;
+    const formatKind = this.formatKind;
+    return {
+      running: this.running,
+      paused: this.paused,
+      ended: this.ended,
+      remainingMs: this.remainingMs,
+      display: formatRemaining(this.remainingMs, formatKind),
+      rawDisplay: formatRemaining(this.remainingMs, null),
+      formatKind,
+      tick: this.tick,
+      frozenTicks: this.freezeTicks,
+      speedMult,
+      tickLengthMs: this.rest ? TICK_BASE_MS : Math.round(TICK_BASE_MS * speedMult),
+      pulse: { startedAt: this.tickStartedAt, durationMs: this.nextTickDelay() },
+      rest: this.rest
+        ? {
+            remainingMs: this.rest.remainingMs,
+            totalMs: this.rest.totalMs,
+            display: formatRest(this.rest.remainingMs),
+          }
+        : null,
+      cooldownRemainingMs: this.cooldownRemainingMs,
+      stats: { ...this.stats },
+      log: this.log.slice(-12).reverse(),
+      maxRemainingMs: this.maxRemainingMs,
+    };
+  }
+
+  emit() {
+    this.onChange(this.snapshot());
+  }
+}

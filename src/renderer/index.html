@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'">
+  <title>BEE Timer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="titlebar drag">
+      <div class="brand">
+        <span class="brand-bee" aria-hidden="true">🐝</span>
+        <span class="brand-name">BEE<span class="brand-name-sub">TIMER</span></span>
+      </div>
+      <div class="win-controls no-drag">
+        <button id="pinBtn" class="icon-btn" title="Toggle always on top" aria-label="Toggle always on top">📌</button>
+        <button id="minBtn" class="icon-btn" title="Minimize" aria-label="Minimize">─</button>
+        <button id="closeBtn" class="icon-btn close" title="Quit" aria-label="Quit">✕</button>
+      </div>
+    </header>
+
+    <main class="screens">
+      <!-- ============ ONBOARDING / CONFIG ============ -->
+      <section id="wizardScreen" class="screen">
+        <div class="wizard">
+          <div class="hero">
+            <p class="eyebrow">A countdown that hates you</p>
+            <h1>Set the trap.<br><span class="honey-text">Start the stream.</span></h1>
+            <p class="lede">The clock says ten minutes. The clock is lying. Pick a duration, arm the chaos, and pray to the hive.</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Duration</h2>
+              <span id="durationHint" class="hint">10:00 total</span>
+            </div>
+            <div class="duration-row">
+              <button class="chip" data-minutes="1">1 min</button>
+              <button class="chip" data-minutes="5">5 min</button>
+              <button class="chip is-active" data-minutes="10">10 min</button>
+              <button class="chip" data-minutes="30">30 min</button>
+              <label class="custom-input">
+                <span>Custom</span>
+                <input id="durationInput" type="text" value="10:00" spellcheck="false" aria-label="Custom duration as mm:ss">
+              </label>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Chaos</h2>
+              <span class="hint">everything on by default</span>
+            </div>
+            <div id="wizardFeatures" class="feature-list"></div>
+            <button id="advancedToggle" class="linkish" aria-expanded="false">Advanced · danger zone <span>▾</span></button>
+            <div id="advancedPanel" class="advanced hidden"></div>
+          </div>
+
+          <div class="wizard-footer">
+            <p class="fineprint">Everything stays editable mid-run unless you turn that off. Original BEE Mode is off by default — you're welcome.</p>
+            <button id="startBtn" class="primary-btn">Start countdown <span aria-hidden="true">🐝</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ FLOATING TIMER WIDGET ============ -->
+      <section id="timerScreen" class="screen hidden">
+        <div class="timer">
+          <div class="time-block">
+            <div id="formatBadge" class="format-badge hidden">formatting chaos</div>
+            <div id="timeDisplay" class="time-display">10:00</div>
+            <div class="second-meter">
+              <div class="meter-track"><div id="pulseFill" class="meter-fill"></div></div>
+              <div class="meter-labels">
+                <span id="secondLen" class="second-len">1.0s</span>
+                <span class="muted">this second</span>
+              </div>
+            </div>
+            <div class="status-row">
+              <span id="freezeChip" class="status-chip hidden">❄️ frozen</span>
+              <span id="restChip" class="status-chip hidden">🧘 resting</span>
+              <span id="speedChip" class="status-chip hidden">🌀 2×</span>
+              <span id="pauseChip" class="status-chip hidden">⏸ paused</span>
+            </div>
+          </div>
+
+          <div class="timer-controls">
+            <button id="pauseBtn" class="pill-btn">Pause</button>
+            <button id="resetBtn" class="pill-btn ghost">Reset</button>
+            <button id="settingsBtn" class="icon-btn big" title="Settings" aria-label="Settings">⚙️</button>
+          </div>
+
+          <div class="chaos-log"><ul id="logList"></ul></div>
+        </div>
+
+        <div id="restOverlay" class="overlay hidden">
+          <div class="overlay-card rest-card">
+            <div class="rest-bee" aria-hidden="true">🐝</div>
+            <p class="eyebrow">rest mode</p>
+            <h2>Three minutes of peace.</h2>
+            <p class="muted">The timer is paused. Nothing is chasing you. (Except bees.)</p>
+            <div id="restCountdown" class="rest-countdown">03:00</div>
+            <div class="rest-progress"><div id="restProgressFill"></div></div>
+            <button id="skipRestBtn" class="primary-btn small">Skip rest</button>
+          </div>
+        </div>
+
+        <div id="endOverlay" class="overlay hidden">
+          <div class="overlay-card end-card">
+            <div class="end-bee" aria-hidden="true">🐝</div>
+            <p class="eyebrow">countdown complete</p>
+            <h2 class="honey-text">STREAM ENDED</h2>
+            <p id="endStats" class="muted"></p>
+            <div class="end-actions">
+              <button id="runBackBtn" class="primary-btn">Run it back</button>
+              <button id="endSettingsBtn" class="pill-btn ghost">Settings</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="toast" class="toast hidden" role="status" aria-live="polite">
+          <span class="toast-icon" aria-hidden="true">🐝</span>
+          <span id="toastText"></span>
+        </div>
+        <div id="swarm" class="swarm hidden" aria-hidden="true"></div>
+      </section>
+
+      <!-- ============ SETTINGS (also mid-run) ============ -->
+      <section id="settingsScreen" class="screen hidden">
+        <div class="settings">
+          <div class="settings-head">
+            <div>
+              <p class="eyebrow">settings</p>
+              <h1 class="settings-title">Chaos control</h1>
+            </div>
+            <button id="settingsCloseBtn" class="icon-btn big" title="Close settings" aria-label="Close settings">✕</button>
+          </div>
+          <p id="settingsLiveNote" class="live-note">Changes apply immediately.</p>
+
+          <div id="settingsFeatures" class="feature-list"></div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>App</h2></div>
+            <label class="switch-row">
+              <span><strong>Mid-run settings</strong><small>Allow opening settings while the timer runs</small></span>
+              <input id="midRunToggle" type="checkbox" class="switch">
+            </label>
+            <label class="switch-row">
+              <span><strong>Always on top</strong><small>Keep the widget above other windows</small></span>
+              <input id="onTopToggle" type="checkbox" class="switch">
+            </label>
+            <label class="switch-row">
+              <span><strong>Reduce motion</strong><small>Calmer bees, fewer flips</small></span>
+              <input id="reducedMotionToggle" type="checkbox" class="switch">
+            </label>
+          </div>
+
+          <div class="settings-footer">
+            <button id="defaultsBtn" class="pill-btn ghost">Reset defaults</button>
+            <button id="quitBtn" class="pill-btn ghost danger">Quit BEE Timer</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

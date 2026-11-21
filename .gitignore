@@ -1,0 +1,13 @@
+node_modules/
+dist/
+out/
+.npm-cache/
+.electron-cache/
+*.log
+.DS_Store
+.env
+.config/
+.cache/
+.electron-run*.log
+docs/screen-crop.png
+docs/screen-check.png

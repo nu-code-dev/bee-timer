@@ -1,0 +1,87 @@
+# Maintainer: nu-code-dev <nu-code-dev@users.noreply.github.com>
+# AUR package: bee-timer-bin
+#
+# BEE Timer — a chaotic, always-on-top, bee-themed countdown timer.
+# This package wraps the prebuilt AppImage from GitHub Releases.
+#
+# Regenerate the AUR metadata after any change to this file:
+#     makepkg --printsrcinfo > .SRCINFO
+#
+# TODO before submitting/updating on the AUR:
+#   * Replace the AppImage checksum below with the real one. After a successful
+#     `makepkg -g -f` (or by downloading the asset), paste the sha256 here.
+#     SKIP is used for now because the v0.1.0 release asset was not yet
+#     published when this file was written.
+#   * Confirm the release asset name matches the URL below:
+#       https://github.com/nu-code-dev/bee-timer/releases/download/v0.1.0/bee-timer-0.1.0-x86_64.AppImage
+#     electron-builder derives it from artifactName:
+#       bee-timer-${version}-${arch}.${ext}
+
+pkgname=bee-timer-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Chaotic bee-themed countdown timer that sabotages you (DougDoug-inspired)'
+arch=('x86_64')
+url='https://github.com/nu-code-dev/bee-timer'
+license=('MIT')
+depends=(
+  'gtk3'
+  'nss'
+  'libxss'
+  'libxtst'
+  'at-spi2-core'
+  'libnotify'
+)
+optdepends=(
+  'pipewire: audio server for the synthesized bee buzz and chimes (or pulseaudio)'
+  'fuse2: mount the AppImage at runtime if FUSE 2 is not already present'
+  'mako: desktop notifications for bee puns (or dunst)'
+  'dunst: desktop notifications for bee puns (or mako)'
+)
+provides=('bee-timer')
+conflicts=('bee-timer')
+options=('!strip' '!debug')
+
+# Local files shipped in the AUR repository alongside this PKGBUILD.
+source=(
+  'bee-timer.desktop'
+  'bee-timer.png'
+)
+sha256sums=(
+  '27476961c7397e02a1effdd2a7b1b55c13c33a059350eb635c259abd750ff32d'
+  '99fddd6a6f8ccfec094b5e906d9a1e82fdc96888d38634079194383bc4ee52ed'
+)
+
+# Prebuilt release asset.
+_appimage="bee-timer-${pkgver}-x86_64.AppImage"
+source_x86_64=("$url/releases/download/v$pkgver/$_appimage")
+sha256sums_x86_64=('SKIP')  # TODO: replace with the real sha256 of the release AppImage
+
+package() {
+  # The AppImage itself, kept read-only under /opt.
+  install -Dm755 "$srcdir/$_appimage" "$pkgdir/opt/bee-timer/bee-timer.AppImage"
+
+  # Launcher wrapper. The wrapper exists mainly to keep BEE_TIMER_OZONE
+  # passthrough explicit and to give the desktop environment a stable command:
+  #
+  #   bee-timer                       # XWayland (default; Hyprland honors
+  #                                   # _NET_WM_STATE_ABOVE for always-on-top)
+  #   BEE_TIMER_OZONE=wayland bee-timer   # native Wayland (top-most depends on
+  #                                   # compositor/window rules)
+  install -d "$pkgdir/usr/bin"
+  cat > "$pkgdir/usr/bin/bee-timer" <<'EOF'
+#!/bin/sh
+# BEE Timer launcher (AUR: bee-timer-bin).
+# The application reads BEE_TIMER_OZONE; an empty value means "auto"
+# (XWayland when $DISPLAY exists, otherwise Wayland).
+export BEE_TIMER_OZONE="${BEE_TIMER_OZONE:-}"
+exec /opt/bee-timer/bee-timer.AppImage "$@"
+EOF
+  chmod 755 "$pkgdir/usr/bin/bee-timer"
+
+  # Desktop entry and icon (build/icon.png at release-build time).
+  install -Dm644 "$srcdir/bee-timer.desktop" \
+    "$pkgdir/usr/share/applications/bee-timer.desktop"
+  install -Dm644 "$srcdir/bee-timer.png" \
+    "$pkgdir/usr/share/icons/hicolor/512x512/apps/bee-timer.png"
+}

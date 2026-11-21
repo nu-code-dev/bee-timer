@@ -1,0 +1,70 @@
+{
+  "name": "bee-timer",
+  "version": "0.1.0",
+  "description": "BEE Timer \u2014 a chaotic countdown timer that sabotages you. DougDoug-inspired, bee-themed, always-on-top.",
+  "productName": "BEE Timer",
+  "main": "src/main/main.js",
+  "author": {
+    "name": "nu-code-dev",
+    "email": "nu-code-dev@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/nu-code-dev/bee-timer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nu-code-dev/bee-timer.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/",
+    "icon": "node scripts/make-icon.js",
+    "dist:linux": "electron-builder --linux AppImage deb --x64",
+    "dist:dir": "electron-builder --dir",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "dev.nucode.beetimer",
+    "productName": "BEE Timer",
+    "copyright": "Copyright \u00a9 2026 nu-code-dev",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "build/icon.png"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "executableName": "bee-timer",
+      "icon": "build/icon.png",
+      "synopsis": "Chaotic bee-themed countdown timer",
+      "syncDesktopName": true
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.utilities",
+      "icon": "build/icon.png"
+    },
+    "artifactName": "bee-timer-${version}-${arch}.${ext}"
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  },
+  "desktopName": "bee-timer.desktop"
+}
