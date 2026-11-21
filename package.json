@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/",
+    "test": "node --test test/engine.test.mjs",
     "icon": "node scripts/make-icon.js",
     "dist:linux": "electron-builder --linux AppImage deb --x64",
     "dist:dir": "electron-builder --dir",
