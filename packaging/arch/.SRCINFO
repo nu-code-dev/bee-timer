@@ -1,6 +1,6 @@
 pkgbase = bee-timer-bin
 	pkgdesc = Chaotic study/work countdown timer that fights procrastination (DougDoug-inspired)
-	pkgver = 0.1.4
+	pkgver = 0.1.5
 	pkgrel = 1
 	url = https://github.com/nu-code-dev/bee-timer
 	arch = x86_64
@@ -23,7 +23,7 @@ pkgbase = bee-timer-bin
 	source = bee-timer.png
 	sha256sums = 27476961c7397e02a1effdd2a7b1b55c13c33a059350eb635c259abd750ff32d
 	sha256sums = 99fddd6a6f8ccfec094b5e906d9a1e82fdc96888d38634079194383bc4ee52ed
-	source_x86_64 = https://github.com/nu-code-dev/bee-timer/releases/download/v0.1.4/bee-timer-0.1.4-x86_64.AppImage
-	sha256sums_x86_64 = 56af1b324a1cc1316e5eaaf4c0c0d27e27ddba94ebb4df58cff9b6919fd08123
+	source_x86_64 = https://github.com/nu-code-dev/bee-timer/releases/download/v0.1.5/bee-timer-0.1.5-x86_64.AppImage
+	sha256sums_x86_64 = 8c14e07526dda01ebb12a4a9e2a2f616fad3864c639c8f7583a7e1e334951706
 
 pkgname = bee-timer-bin
