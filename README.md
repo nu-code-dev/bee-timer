@@ -28,7 +28,7 @@ It's not productivity magic — it's a timer that turns "one more minute" from a
 
 ## Features
 
-Every feature is independently toggleable and has a per-tick probability you can edit in the app or in [`config.json`](docs/CONFIG.md).
+Every feature is independently toggleable and has a per-tick probability you can edit in the app or in [`config.json`](docs/CONFIG.md). The default look is dark honey; **Light mode** in *Settings → App* switches to a cream-and-honey theme.
 
 | Feature | Odds / tick | Default | What it does |
 | --- | --- | --- | --- |
@@ -43,7 +43,7 @@ Every feature is independently toggleable and has a per-tick probability you can
 | 🐝 Original BEE Mode | 1% | Off | Synthesized bee buzz + a swarm overlay. Unhinged. |
 | 🪟 Window Teleport | 1% | Off | Randomly moves the window. Tucked under **Advanced · danger zone**. |
 
-Other touches: draggable frameless titlebar, pin/always-on-top button, pulse meter that visualizes the current tick length, a rolling chaos log, editable settings mid-run (on by default), reduced-motion mode, and a victory screen with run stats.
+Other touches: draggable frameless titlebar, pin/always-on-top button, pulse meter that visualizes the current tick length, a rolling chaos log, editable settings mid-run (on by default), reduced-motion mode, a **light mode** (cream-and-honey, under *Settings → App*), an optional **notify on every chaos event** switch that turns each +1s, +1m, double, freeze, formatting, speed, teleport, rest, bee-mode, and end-of-timer event into a desktop notification, and a victory screen with run stats.
 
 <p>
   <img src="docs/screenshot-timer.png" alt="BEE Timer floating timer widget with chaos log" width="49%">
@@ -53,21 +53,35 @@ Other touches: draggable frameless titlebar, pin/always-on-top button, pulse met
   <img src="docs/screenshot-rest.png" alt="Rest Mode overlay: a skippable three-minute break" width="49%">
   <img src="docs/screenshot-toast.png" alt="In-app bee pun toast falling back from a desktop notification" width="49%">
 </p>
+<p>
+  <img src="docs/screenshot-timer-light.png" alt="BEE Timer in light mode" width="49%">
+  <img src="docs/screenshot-setup-light.png" alt="Setup &amp; integration screen: notification daemon status and Hyprland Lua rules" width="49%">
+</p>
 
 ## Install
 
 ### One-line install (Linux, optional)
 
-No AUR account, no build tools, no sudo. Installs the latest release AppImage **extracted** into `~/.local/opt/bee-timer/` (so FUSE 2 is not required), adds a `bee-timer` command, and registers **BEE Timer** in your application menu:
+No AUR account, no build tools, and no sudo for the app itself. Installs the latest release AppImage **extracted** into `~/.local/opt/bee-timer/` (so FUSE 2 is not required), adds a `bee-timer` command, and registers **BEE Timer** in your application menu:
 
 ```bash
+# one-liner: latest release (prompts when a terminal is attached)
 curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash
+
+# or from a checkout of the repo
+bash install.sh
+
+# unattended: accept the optional mako + Hyprland prompts (no prompts without a TTY)
+curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | BEE_TIMER_YES=1 bash
 ```
 
 - x86_64 Linux, fully user-local (nothing outside `~/.local`)
-- uninstall with: `curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash -s -- --uninstall`
-- `BEE_TIMER_PREFIX=/usr/local` with `sudo` for a system-wide install, `BEE_TIMER_VERSION=0.1.1` to pin a release
+- optional interactive prompts, defaulting to **No** (and reading from `/dev/tty`, so `curl | bash` still works): install `mako` on Arch when no notification daemon is running (other distros get package-manager advice), and append BEE Timer window rules to your Hyprland config (Lua `hyprland.lua` when present, legacy `hyprland.conf` otherwise). The rule edit backs the file up, skips duplicate rules, and runs `hyprctl reload` when available.
+- unattended installs: `BEE_TIMER_YES=1` accepts both prompts; with no TTY the answers stay No
+- uninstall with: `curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash -s -- --uninstall` — this also removes the BEE Timer rule block the installer added to your Hyprland config, leaving the rest of the file and your app config untouched
+- `BEE_TIMER_PREFIX=/usr/local` with `sudo` for a system-wide install, `BEE_TIMER_VERSION=0.1.2` to pin a release
 - completely optional — the AUR package, AppImage, `.deb`, and source builds below all still work
+- the same setup notes (notification-daemon status, copyable Hyprland snippets, installed paths, uninstall command) are inside the app under **Settings → Setup & integration**
 
 
 ### Arch Linux
@@ -84,20 +98,20 @@ That installs the release AppImage to `/opt/bee-timer/` behind a `/usr/bin/bee-t
 
 ### Direct download (Linux)
 
-Grab `bee-timer-0.1.1-x86_64.AppImage` or `bee-timer-0.1.1-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.1`):
+Grab `bee-timer-0.1.2-x86_64.AppImage` or `bee-timer-0.1.2-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.2`):
 
 ```bash
 # AppImage
-chmod +x bee-timer-0.1.1-x86_64.AppImage
-./bee-timer-0.1.1-x86_64.AppImage
+chmod +x bee-timer-0.1.2-x86_64.AppImage
+./bee-timer-0.1.2-x86_64.AppImage
 
 # Debian / Ubuntu
-sudo apt install ./bee-timer-0.1.1-amd64.deb
+sudo apt install ./bee-timer-0.1.2-amd64.deb
 ```
 
 ### Windows and macOS
 
-Windows (`NSIS` installer, `bee-timer-0.1.1-x64.exe`) and macOS (`bee-timer-0.1.1-arm64.dmg`, Apple Silicon) builds are produced by GitHub Actions on every release — see [Releases](https://github.com/nu-code-dev/bee-timer/releases). **Windows/macOS builds are CI-produced and unsigned; they are not smoke-tested on real Windows/macOS hardware by the maintainer yet.** They are **unsigned**:
+Windows (`NSIS` installer, `bee-timer-0.1.2-x64.exe`) and macOS (`bee-timer-0.1.2-arm64.dmg`, Apple Silicon) builds are produced by GitHub Actions on every release — see [Releases](https://github.com/nu-code-dev/bee-timer/releases). **Windows/macOS builds are CI-produced and unsigned; they are not smoke-tested on real Windows/macOS hardware by the maintainer yet.** They are **unsigned**:
 
 - **Windows:** SmartScreen will show "Windows protected your PC" → *More info* → *Run anyway*.
 - **macOS:** Gatekeeper will block the app → right-click the app → *Open*, or allow it under *System Settings → Privacy & Security*.
@@ -108,23 +122,36 @@ macOS builds are not notarized; there is no auto-updater. If you prefer, build f
 
 BEE Timer runs as an **XWayland** client on Linux by default when `$DISPLAY` is set, because Wayland has no always-on-top toplevel protocol while Hyprland honors `_NET_WM_STATE_ABOVE` for XWayland windows. Force native Wayland with `BEE_TIMER_OZONE=wayland` (always-on-top then depends on your compositor rules).
 
-Hyprland tiles new windows, so add rules. Good news: rules **must** go in `hyprland.conf` (runtime `hyprctl keyword windowrulev2 …` and `windowrule` both returned *unknown request* on Hyprland 0.57) — then run `hyprctl reload`.
+Hyprland tiles new windows, so add rules. Current Hyprland (0.57+) uses a **Lua config** — the main file is usually `~/.config/hypr/hyprland.lua`, often split into modules via `require()`. Put this in the main file or a rules module it requires:
+
+```lua
+hl.window_rule({
+    match = { class = "bee-timer" },
+    float = true,
+    size = "400 320",
+    pin = true,
+})
+```
+
+Then run `hyprctl reload` and restart BEE Timer — rules apply when the window opens. Runtime `hyprctl keyword windowrulev2 …` (and `hyprctl keyword windowrule …`) returned *unknown request* on Hyprland 0.57 — the rules must be **edited in a config file**, not added with `hyprctl keyword`. If your config is generated by a dotfiles/framework setup (Caelestia, KooL dots, and friends), add the block to your **user-overrides file** instead of the generated main config, or it may be overwritten.
+
+Older Hyprland setups use `hyprland.conf` syntax; keep this as the legacy fallback:
 
 ```ini
 # Hyprland ≤ 0.52 (windowrulev2 syntax)
 windowrulev2 = float,class:^(bee-timer)$
 windowrulev2 = size 400 320,class:^(bee-timer)$
 windowrulev2 = pin,class:^(bee-timer)$
-windowrulev2 = stayfocused,class:^(bee-timer)$
 
 # Hyprland 0.53+ (new windowrule syntax; consult your version)
 windowrule = float, class:^(bee-timer)$
 windowrule = size 400 320, class:^(bee-timer)$
 windowrule = pin, class:^(bee-timer)$
-windowrule = stay_focused, class:^(bee-timer)$
 ```
 
-Check `hyprctl version` for your syntax, and `hyprctl clients` to confirm the window class is `bee-timer`. Notifications need `mako`, `dunst`, or another `notify-send`-compatible daemon; audio is synthesized via WebAudio and needs PipeWire or PulseAudio. Full guide, positioning tips, and troubleshooting: [docs/HYPRLAND.md](docs/HYPRLAND.md).
+The one-line installer offers to add these rules for you when it detects Hyprland (Lua first, `.conf` fallback; it backs up the file, skips duplicates, and reloads), or prints the snippet if you decline. Either way, the snippet is also copyable in-app under **Settings → Setup & integration**, and ships as [`packaging/arch/hyprland.conf.snippet`](packaging/arch/hyprland.conf.snippet).
+
+Check `hyprctl clients` to confirm the window class is `bee-timer`. Notifications need a `notify-send`-compatible daemon (`mako`, `dunst`, `swaync`, `fnott`, …): on Arch `sudo pacman -S mako`, then start it with `mako &` or add it to your compositor autostart. Without a daemon, bee puns and chaos-event notifications fall back to in-app toasts; **Settings → Setup & integration** shows the detected daemon status. Audio is synthesized via WebAudio and needs PipeWire or PulseAudio. Full guide, positioning tips, and troubleshooting: [docs/HYPRLAND.md](docs/HYPRLAND.md).
 
 ## Controls
 
@@ -134,6 +161,9 @@ Check `hyprctl version` for your syntax, and `hyprctl clients` to confirm the wi
 | Pause / start | **Space** while the timer screen is focused, or the Pause/Start button. |
 | Pin on top | 📌 button in the titlebar, or *Always on top* in settings. |
 | Settings | ⚙️ on the widget (works mid-run by default). |
+| Setup & integration | ⚙️ Settings → **Setup & integration**: notification-daemon status, copyable Hyprland rule snippets, installed paths, uninstall command. |
+| Light mode | ⚙️ Settings → **App** → *Light mode* toggles the cream-and-honey theme (default is dark honey). |
+| Notify on every chaos event | ⚙️ Settings → **App**: also send each chaos event as a desktop notification (needs a notification daemon). |
 | Skip a rest | **Skip rest** button on the rest overlay. |
 | Reset / run again | **Reset** on the widget, or **Run it back** on the end screen. |
 | Quit / minimize | ✕ / ─ in the titlebar, or *Quit BEE Timer* in settings. |
@@ -150,7 +180,7 @@ Config is JSON, sanitized and clamped on load, and written atomically by the mai
 | Windows | `%APPDATA%\BEE Timer\config.json` |
 | macOS | `~/Library/Application Support/BEE Timer/config.json` |
 
-The Settings screen is the friendly way to edit it — feature toggles, per-tick percentages, duration, always-on-top, mid-run editing, and reduced motion. For the full key-by-key schema, ranges, and examples, see [docs/CONFIG.md](docs/CONFIG.md).
+The Settings screen is the friendly way to edit it — feature toggles, per-tick percentages, duration, always-on-top, mid-run editing, reduced motion, light mode, and the notify-on-every-event switch. For the full key-by-key schema, ranges, and examples, see [docs/CONFIG.md](docs/CONFIG.md).
 
 ## Build from source
 
@@ -178,7 +208,7 @@ npm run dist:win     # Windows installer — run on Windows or CI
 npm run dist:mac     # macOS .dmg — run on macOS or CI
 ```
 
-Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.1-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.1-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
+Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.2-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.2-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
 
 ## Testing
 

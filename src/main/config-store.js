@@ -17,6 +17,7 @@ const DEFAULTS = Object.freeze({
   tickBaseMs: 1000,
   maxRemainingMs: 24 * 60 * 60 * 1000,
   midRunSettings: true,
+  notifyAllEvents: false,
   features: {
     addSecond:      { enabled: true,  chancePct: 5 },
     addMinute:      { enabled: true,  chancePct: 1 },
@@ -29,7 +30,7 @@ const DEFAULTS = Object.freeze({
     beePuns:        { enabled: true,  chancePct: 1 },
     restMode:       { enabled: true,  chancePct: 0.5, restMs: 180000, cooldownMs: 300000 },
   },
-  appearance: { theme: 'honey', reducedMotion: false, opacity: 0.97 },
+  appearance: { theme: 'dark', reducedMotion: false, opacity: 0.97 },
   window: { alwaysOnTop: true, x: null, y: null, width: 392, height: 250 },
 });
 
@@ -105,9 +106,11 @@ function sanitizeConfig(input) {
     tickBaseMs: 1000,
     maxRemainingMs: DEFAULTS.maxRemainingMs,
     midRunSettings: bool(raw.midRunSettings, DEFAULTS.midRunSettings),
+    notifyAllEvents: bool(raw.notifyAllEvents, DEFAULTS.notifyAllEvents),
     features,
     appearance: {
-      theme: 'honey',
+      // "honey" was the only theme in 0.1.0/0.1.1; treat it as dark.
+      theme: appearance.theme === 'light' ? 'light' : 'dark',
       reducedMotion: bool(appearance.reducedMotion, DEFAULTS.appearance.reducedMotion),
       opacity: num(appearance.opacity, 0.6, 1, DEFAULTS.appearance.opacity),
     },

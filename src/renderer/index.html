@@ -127,6 +127,81 @@
         <div id="swarm" class="swarm hidden" aria-hidden="true"></div>
       </section>
 
+
+      <!-- ============ SETUP & INTEGRATION (Hyprland, notifications, files) ============ -->
+      <section id="setupScreen" class="screen hidden">
+        <div class="settings setup">
+          <div class="settings-head">
+            <div>
+              <p class="eyebrow">desktop integration</p>
+              <h1 class="settings-title">Setup &amp; help</h1>
+            </div>
+            <button id="setupCloseBtn" class="icon-btn big" title="Close setup" aria-label="Close setup">✕</button>
+          </div>
+          <p class="muted">Everything needed to make notifications, Hyprland floating/always-on-top, and the app menu behave. The one-line installer can do most of this for you.</p>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Notifications</h2>
+              <span id="notifyStatusChip" class="status-pill">checking…</span>
+            </div>
+            <p id="notifyStatusText" class="muted">Checking for a notification daemon…</p>
+            <div class="code-row">
+              <code id="makoInstallCmd">sudo pacman -S --needed mako</code>
+              <button class="copy-btn" data-copy-target="makoInstallCmd">Copy</button>
+            </div>
+            <div class="code-row">
+              <code id="startNotifierCmd">mako &amp;</code>
+              <button class="copy-btn" data-copy-target="startNotifierCmd">Copy</button>
+            </div>
+            <p class="fineprint">No daemon = bee puns still appear as in-app toasts, but never as desktop notifications. On other distros try <code>dunst</code>, <code>swaync</code> or <code>fnott</code>. Add <code>mako</code> to your compositor autostart so it survives reboots.</p>
+            <p class="fineprint">Want a notification for <em>every</em> chaos event, not just puns? Enable <strong>Notify on every chaos event</strong> in Settings → App.</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Hyprland window rules</h2>
+              <span class="hint">Lua · 0.57+</span>
+            </div>
+            <p id="hyprTargetText" class="muted">Hyprland tiles new windows, so BEE Timer needs a float + pin rule to stay a floating always-on-top widget.</p>
+            <pre class="code-block" id="hyprLuaSnippet">hl.window_rule({
+    match = { class = "bee-timer" },
+    float = true,
+    size = "400 320",
+    pin = true,
+})</pre>
+            <button class="copy-btn wide-copy" data-copy-target="hyprLuaSnippet">Copy Lua rule</button>
+            <details class="legacy">
+              <summary>Older Hyprland (hyprland.conf syntax)</summary>
+              <pre class="code-block" id="hyprConfSnippet">windowrulev2 = float,class:^(bee-timer)$
+windowrulev2 = size 400 320,class:^(bee-timer)$
+windowrulev2 = pin,class:^(bee-timer)$</pre>
+              <button class="copy-btn wide-copy" data-copy-target="hyprConfSnippet">Copy conf rule</button>
+            </details>
+            <p class="fineprint">Add the block to your Hyprland config, then run <code>hyprctl reload</code>. If a dotfiles framework generates your config, put it in your user override file instead. The installer can also add it for you (after asking).</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Installed files</h2><span class="hint">optional installer</span></div>
+            <ul id="installPaths" class="path-list">
+              <li><code>~/.local/bin/bee-timer</code><span>launcher command</span></li>
+              <li><code>~/.local/opt/bee-timer/app</code><span>unpacked app</span></li>
+              <li><code>~/.local/share/applications/bee-timer.desktop</code><span>app menu entry</span></li>
+            </ul>
+            <p class="fineprint">Installed with the one-line script? These are the exact paths it writes (AppImage builds don't use them). Your config lives at <code id="configPathText">~/.config/BEE Timer/config.json</code>.</p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Uninstall</h2></div>
+            <div class="code-row">
+              <code id="uninstallCmd">curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash -s -- --uninstall</code>
+              <button class="copy-btn" data-copy-target="uninstallCmd">Copy</button>
+            </div>
+            <p class="fineprint">Removes the app, launcher, menu entry and icon, and the BEE Timer Hyprland rule block. Leaves your settings file alone.</p>
+          </div>
+        </div>
+      </section>
+
       <!-- ============ SETTINGS (also mid-run) ============ -->
       <section id="settingsScreen" class="screen hidden">
         <div class="settings">
@@ -155,7 +230,17 @@
               <span><strong>Reduce motion</strong><small>Calmer bees, fewer flips</small></span>
               <input id="reducedMotionToggle" type="checkbox" class="switch">
             </label>
+            <label class="switch-row">
+              <span><strong>Light mode</strong><small>Cream-and-honey light theme</small></span>
+              <input id="lightModeToggle" type="checkbox" class="switch">
+            </label>
+            <label class="switch-row">
+              <span><strong>Notify on every chaos event</strong><small>Desktop notification + toast for every timer change (needs a notification daemon)</small></span>
+              <input id="notifyAllToggle" type="checkbox" class="switch">
+            </label>
           </div>
+
+          <button id="setupBtn" class="pill-btn ghost wide">Setup &amp; integration · notifications &amp; Hyprland</button>
 
           <div class="settings-footer">
             <button id="defaultsBtn" class="pill-btn ghost">Reset defaults</button>

@@ -303,7 +303,7 @@ export class BeeEngine {
       this.freezeTicks = features.freeze?.cycles ?? 5;
       this.stats.freezes += 1;
       this.pushLog('❄️', `Timer frozen for ${this.freezeTicks} cycles. Enjoy the stillness.`);
-      this.onEffect({ type: 'freeze' });
+      this.onEffect({ type: 'freeze', cycles: this.freezeTicks });
     }
 
     if (this.roll('formatChaos')) this.triggerFormatChaos();

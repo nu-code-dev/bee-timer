@@ -29,7 +29,9 @@ function cacheEls() {
     'restOverlay', 'restCountdown', 'restProgressFill', 'skipRestBtn',
     'endOverlay', 'endStats', 'runBackBtn', 'endSettingsBtn', 'toast', 'toastText',
     'swarm', 'settingsCloseBtn', 'settingsLiveNote', 'midRunToggle', 'onTopToggle',
-    'reducedMotionToggle', 'defaultsBtn', 'quitBtn', 'pinBtn', 'minBtn', 'closeBtn',
+    'reducedMotionToggle', 'lightModeToggle', 'notifyAllToggle', 'defaultsBtn', 'quitBtn',
+    'pinBtn', 'minBtn', 'closeBtn', 'setupScreen', 'setupBtn', 'setupCloseBtn',
+    'notifyStatusChip', 'notifyStatusText', 'hyprTargetText', 'installPaths', 'configPathText',
   ].forEach((id) => { els[id] = $(id); });
 }
 
@@ -76,6 +78,7 @@ function cacheEls() {
 // --------------------------------------------------------------------------
 function applyAppearance() {
   document.body.classList.toggle('reduced-motion', Boolean(config.appearance?.reducedMotion));
+  document.body.classList.toggle('light-mode', config.appearance?.theme === 'light');
 }
 
 function syncPinButton() {
@@ -139,14 +142,20 @@ function showScreen(name) {
   els.wizardScreen.classList.toggle('hidden', name !== 'wizard');
   els.timerScreen.classList.toggle('hidden', name !== 'timer');
   els.settingsScreen.classList.toggle('hidden', name !== 'settings');
-  api.window.setMode(name === 'settings' ? 'settings' : name === 'wizard' ? 'wizard' : 'widget');
+  els.setupScreen.classList.toggle('hidden', name !== 'setup');
+  api.window.setMode(name === 'wizard' ? 'wizard' : name === 'timer' ? 'widget' : 'settings');
   if (name === 'settings') refreshSettingsState();
+  if (name === 'setup') loadIntegration();
   if (name === 'timer') render(latest);
 }
 
 function onKeyDown(event) {
   if (event.key === 'Escape' && screen === 'settings') {
     showScreen('timer');
+    return;
+  }
+  if (event.key === 'Escape' && screen === 'setup') {
+    showScreen('settings');
     return;
   }
   if (event.code === 'Space' && screen === 'timer' && !event.repeat) {
@@ -472,6 +481,78 @@ function handleEffect(effect) {
     default:
       break;
   }
+
+  if (config.notifyAllEvents && effect.type !== 'pun') {
+    const message = describeEffect(effect);
+    if (message) {
+      api.notify('BEE Timer 🐝', message).catch(() => {});
+      showToast(message);
+    }
+  }
+}
+
+function describeEffect(effect) {
+  switch (effect.type) {
+    case 'add-second': return '+1 second. The timer is being petty.';
+    case 'add-minute': return '+1 minute. Bold of you to think you were close.';
+    case 'double': return 'Remaining time DOUBLED. Why. Just why.';
+    case 'freeze': return `Timer frozen for ${effect.cycles ?? 5} cycles.`;
+    case 'format': return effect.kind === 'swap'
+      ? 'Formatting chaos: minutes and seconds swapped.'
+      : 'Formatting chaos: rounded to the nearest minute.';
+    case 'speed': return `Time is now ${effect.mult}× for ${effect.durationTicks} ticks.`;
+    case 'window': return 'The window got bored and moved.';
+    case 'bees': return 'ORIGINAL BEE MODE. BZZZZZZZZZ.';
+    case 'rest-start': return 'Rest mode: a 3-minute skippable break.';
+    case 'rest-end': return effect.skipped ? 'Rest skipped. Back to chaos.' : 'Rest over. Back to chaos.';
+    case 'end': return 'Time is up. The stream is over.';
+    default: return null;
+  }
+}
+
+// --------------------------------------------------------------------------
+// desktop integration / setup screen
+// --------------------------------------------------------------------------
+async function loadIntegration() {
+  try {
+    const info = await api.integration();
+    const notification = info.notification || {};
+    if (notification.available) {
+      els.notifyStatusChip.textContent = `daemon: ${notification.daemon || 'detected'}`;
+      els.notifyStatusChip.classList.add('ok');
+      els.notifyStatusChip.classList.remove('missing');
+      els.notifyStatusText.textContent = `Desktop notifications are working via ${notification.daemon || 'a notification daemon'}. Bee puns and chaos-event notifications will appear as real desktop notifications.`;
+    } else {
+      els.notifyStatusChip.textContent = 'no daemon detected';
+      els.notifyStatusChip.classList.add('missing');
+      els.notifyStatusChip.classList.remove('ok');
+      els.notifyStatusText.textContent = 'No notification daemon is running, so desktop notifications are silently dropped. Bee puns still show as in-app toasts. Install and start one below, then reopen this screen to re-check.';
+    }
+
+    const hypr = info.hyprland || {};
+    if (hypr.luaConfig) {
+      els.hyprTargetText.textContent = `Detected Lua config: ${hypr.luaConfig}. Add the rule there (or in your user override file), then run hyprctl reload.`;
+    } else if (hypr.confConfig) {
+      els.hyprTargetText.textContent = `Detected legacy config: ${hypr.confConfig}. Use the legacy snippet below, then run hyprctl reload.`;
+    } else if (hypr.running) {
+      els.hyprTargetText.textContent = 'Hyprland is running, but no config file was found in ~/.config/hypr. Add the rule to whatever config you load.';
+    } else {
+      els.hyprTargetText.textContent = 'Hyprland does not look like the running compositor (or its config is elsewhere). If you use Hyprland, add the rule to your config and run hyprctl reload.';
+    }
+
+    const rows = [];
+    if (info.appImage) rows.push([info.appImage, 'running from AppImage']);
+    if (info.files?.launcher) rows.push([info.files.launcher, 'launcher command']);
+    if (info.files?.installedApp) rows.push([info.files.installedApp, 'unpacked app']);
+    if (info.files?.desktopEntry) rows.push([info.files.desktopEntry, 'app menu entry']);
+    if (!rows.length) rows.push(['~/.local/bin/bee-timer', 'launcher (one-line install)']);
+    rows.push([`${info.userDataPath}/config.json`, 'settings file']);
+    els.installPaths.innerHTML = rows
+      .map(([value, label]) => `<li><code>${escapeHtml(value)}</code><span>${escapeHtml(label)}</span></li>`)
+      .join('');
+  } catch (err) {
+    els.notifyStatusText.textContent = `Could not read desktop integration status: ${err.message}`;
+  }
 }
 
 function showToast(text) {
@@ -579,6 +660,33 @@ function playChime(gentle = false) {
 // --------------------------------------------------------------------------
 function bindSettings() {
   els.settingsCloseBtn.addEventListener('click', () => showScreen('timer'));
+  els.setupBtn.addEventListener('click', () => showScreen('setup'));
+  els.setupCloseBtn.addEventListener('click', () => showScreen('settings'));
+
+  els.lightModeToggle.addEventListener('change', () => {
+    config.appearance.theme = els.lightModeToggle.checked ? 'light' : 'dark';
+    applyAppearance();
+    persistDebounced();
+  });
+  els.notifyAllToggle.addEventListener('change', () => {
+    config.notifyAllEvents = els.notifyAllToggle.checked;
+    persistDebounced();
+  });
+
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-copy-target]');
+    if (!button) return;
+    const source = document.getElementById(button.dataset.copyTarget);
+    if (!source) return;
+    try {
+      await api.clipboard(source.textContent);
+      const original = button.textContent;
+      button.textContent = 'Copied ✓';
+      setTimeout(() => { button.textContent = original; }, 1400);
+    } catch (err) {
+      console.warn('[bee-timer] clipboard failed', err.message);
+    }
+  });
 
   els.midRunToggle.addEventListener('change', () => {
     config.midRunSettings = els.midRunToggle.checked;
@@ -600,6 +708,8 @@ function refreshSettingsState() {
   els.midRunToggle.checked = Boolean(config.midRunSettings);
   els.onTopToggle.checked = Boolean(config.window.alwaysOnTop);
   els.reducedMotionToggle.checked = Boolean(config.appearance.reducedMotion);
+  els.lightModeToggle.checked = config.appearance.theme === 'light';
+  els.notifyAllToggle.checked = Boolean(config.notifyAllEvents);
   const running = Boolean(engine && engine.running && !engine.paused);
   const live = els.settingsLiveNote;
   if (running && !config.midRunSettings) {
@@ -626,7 +736,12 @@ async function resetDefaults() {
   const defaults = await api.config.defaults();
   config.features = structuredClone(defaults.features);
   config.midRunSettings = defaults.midRunSettings;
-  config.appearance = { ...config.appearance, reducedMotion: defaults.appearance.reducedMotion };
+  config.appearance = {
+    ...config.appearance,
+    reducedMotion: defaults.appearance.reducedMotion,
+    theme: defaults.appearance.theme,
+  };
+  config.notifyAllEvents = defaults.notifyAllEvents;
   config.window.alwaysOnTop = defaults.window.alwaysOnTop;
   buildFeatureLists();
   syncFeatureControls();

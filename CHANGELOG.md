@@ -7,8 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet. The hive is resting.
+
+## [0.1.2] - 2026-11-21
+
+### Added
+
+- **Light mode** — _Settings → App → Light mode_ switches the default dark-honey
+  theme to a cream/honey light theme. Persisted as `appearance.theme`
+  (`"dark"` default, `"light"`); old `"honey"` values migrate to `"dark"`.
+- **Notify on every chaos event** — _Settings → App_ toggle, config key
+  `notifyAllEvents` (boolean, default `false`). When on, every chaos event
+  (+1s, +1m, double, freeze, formatting, speed, window teleport, rest start/end,
+  Original BEE mode, end of timer) is sent as a desktop notification alongside
+  the in-app toast. Bee puns already notify by default. Needs a notification daemon.
+- **Settings → Setup & integration screen** — detects a running notification
+  daemon (mako/dunst/swaync/fnott/etc., or "none detected") with install/start
+  hints, shows copyable Hyprland window-rule snippets (Lua primary, legacy
+  `hyprland.conf` fallback), lists installed paths (launcher, unpacked app dir,
+  desktop entry, config), and provides the uninstall command.
+- **`install.sh` prompts** — interactive setup prompts (default **No**, read from
+  `/dev/tty` so `curl | bash` works): install `mako` on Arch when no notification
+  daemon is running, and append BEE Timer window rules to the detected Hyprland
+  config (Lua `hl.window_rule` when `hyprland.lua` exists, legacy
+  `windowrulev2` when only `hyprland.conf` exists) with a backup, duplicate-rule
+  skip, and `hyprctl reload`. `BEE_TIMER_YES=1` accepts both for unattended
+  installs; `--uninstall` removes the rule block the installer added.
+
 ### Changed
 
+- Docs now treat Hyprland's Lua config (`hyprland.lua`, `hl.window_rule`) as the
+  primary window-rule path, with `hyprland.conf` (`windowrulev2` / hybrid
+  `windowrule`) documented as the legacy fallback; README and download guidance
+  updated for the 0.1.2 artifacts.
 - `packaging/arch/`: bumped `bee-timer-bin` to 0.1.1 with the verified AppImage
   checksum from the published release; regenerated `.SRCINFO`.
 

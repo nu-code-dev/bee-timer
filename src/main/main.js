@@ -1,7 +1,10 @@
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain, Notification, screen, shell } = require('electron');
+const { execFile } = require('node:child_process');
+const os = require('node:os');
+const { app, BrowserWindow, ipcMain, Notification, screen, shell, clipboard } = require('electron');
 const { DEFAULTS, loadConfig, saveConfig } = require('./config-store');
 
 // --- Hyprland / Linux windowing strategy -------------------------------------
@@ -102,6 +105,53 @@ function setMode(mode) {
   return size;
 }
 
+
+// --- desktop integration helpers --------------------------------------------
+
+const NOTIFIER_NAMES = [
+  'mako', 'dunst', 'swaync', 'fnott', 'notify-osd', 'xfce4-notifyd',
+  'gnome-shell', 'plasmashell', 'hyprnotification',
+];
+
+function findProcess(names) {
+  return new Promise((resolve) => {
+    execFile('ps', ['-eo', 'comm='], { timeout: 1500 }, (err, stdout) => {
+      if (err || !stdout) return resolve(null);
+      const running = new Set(
+        stdout.split('\n').map((line) => line.trim().toLowerCase()).filter(Boolean),
+      );
+      resolve(names.find((name) => running.has(name)) || null);
+    });
+  });
+}
+
+function dbusNotificationsAvailable() {
+  return new Promise((resolve) => {
+    execFile(
+      'dbus-send',
+      [
+        '--session', '--print-reply', '--dest=org.freedesktop.DBus',
+        '/org/freedesktop/DBus', 'org.freedesktop.DBus.NameHasOwner',
+        'string:org.freedesktop.Notifications',
+      ],
+      { timeout: 1500 },
+      (err, stdout) => resolve(!err && /boolean\s+true/.test(stdout || '')),
+    );
+  });
+}
+
+async function notifyStatus() {
+  const [processName, dbus] = await Promise.all([
+    findProcess(NOTIFIER_NAMES),
+    dbusNotificationsAvailable(),
+  ]);
+  return {
+    available: Boolean(processName) || dbus,
+    daemon: processName || (dbus ? 'notification daemon' : null),
+    dbus,
+  };
+}
+
 // --- IPC ---------------------------------------------------------------------
 
 ipcMain.handle('config:get', () => loadConfig());
@@ -161,6 +211,40 @@ ipcMain.handle('notify:show', (_event, { title, body } = {}) => {
     console.error('[bee-timer] notification failed:', err.message);
     return false;
   }
+});
+
+
+ipcMain.handle('app:integration-info', async () => {
+  const home = os.homedir();
+  const hyprDir = path.join(home, '.config', 'hypr');
+  const luaConfig = path.join(hyprDir, 'hyprland.lua');
+  const confConfig = path.join(hyprDir, 'hyprland.conf');
+  const desktopEntry = path.join(home, '.local', 'share', 'applications', 'bee-timer.desktop');
+  const launcher = path.join(home, '.local', 'bin', 'bee-timer');
+  const installedApp = path.join(home, '.local', 'opt', 'bee-timer', 'app');
+  return {
+    platform: process.platform,
+    execPath: process.execPath,
+    appImage: process.env.APPIMAGE || null,
+    userDataPath: app.getPath('userData'),
+    home,
+    notification: await notifyStatus(),
+    hyprland: {
+      luaConfig: fs.existsSync(luaConfig) ? luaConfig : null,
+      confConfig: fs.existsSync(confConfig) ? confConfig : null,
+      running: Boolean(process.env.HYPRLAND_INSTANCE_SIGNATURE),
+    },
+    files: {
+      launcher: fs.existsSync(launcher) ? launcher : null,
+      installedApp: fs.existsSync(installedApp) ? installedApp : null,
+      desktopEntry: fs.existsSync(desktopEntry) ? desktopEntry : null,
+    },
+  };
+});
+
+ipcMain.handle('clipboard:write', (_event, text) => {
+  clipboard.writeText(String(text ?? ''));
+  return true;
 });
 
 ipcMain.handle('app:quit', () => app.quit());

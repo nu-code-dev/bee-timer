@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('bee', {
     chaosMove: (marginPx) => ipcRenderer.invoke('window:chaos-move', marginPx),
   },
   notify: (title, body) => ipcRenderer.invoke('notify:show', { title, body }),
+  integration: () => ipcRenderer.invoke('app:integration-info'),
+  clipboard: (text) => ipcRenderer.invoke('clipboard:write', text),
   app: {
     quit: () => ipcRenderer.invoke('app:quit'),
     minimize: () => ipcRenderer.invoke('app:minimize'),

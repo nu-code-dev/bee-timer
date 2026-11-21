@@ -1,38 +1,61 @@
 # BEE Timer — Hyprland window rules
-# ---------------------------------------------------------------------------
-# Copy the block matching your Hyprland version into ~/.config/hypr/hyprland.conf
-# (or a file you `source` from it), then run:
+# ===========================================================================
+# PRIMARY: Hyprland 0.57+ (Lua config)
+#
+# Current Hyprland uses a Lua config whose main file is usually
+# ~/.config/hypr/hyprland.lua, often split into modules via require().
+# Put this block in that file, or in one of its modules / your user-overrides
+# file, then run:
 #
 #     hyprctl reload
-#     hyprctl version     # confirm which rule syntax your build understands
 #
-# Window rules are evaluated when a window OPENS, so restart BEE Timer after
-# adding/changing them. On Hyprland 0.57 the runtime commands
-# `hyprctl keyword windowrulev2 ...` and `hyprctl keyword windowrule ...`
-# both returned "unknown request" — putting the rules in hyprland.conf and
-# reloading works. Rule syntax changed around Hyprland 0.53.
+# and restart BEE Timer so the rule applies to the window when it opens.
 #
+#     hl.window_rule({
+#         match = { class = "bee-timer" },
+#         float = true,
+#         size = "400 320",
+#         pin = true,
+#     })
+#
+# This file is named .conf for link compatibility; the block above is Lua.
+# ---------------------------------------------------------------------------
 # The window class is `bee-timer` (the app passes --class=bee-timer).
 # Verify with: hyprctl clients
-# ---------------------------------------------------------------------------
+# ===========================================================================
 
-# === Hyprland <= 0.52: windowrulev2 syntax ================================
-windowrulev2 = float,class:^(bee-timer)$
-windowrulev2 = size 400 320,class:^(bee-timer)$
-windowrulev2 = pin,class:^(bee-timer)$
+
+# ===========================================================================
+# FALLBACK: legacy hyprland.conf syntax
+#
+# Only use these if your Hyprland config is still .conf based. Pick the form
+# matching your version (check `hyprctl version`), put it in
+# ~/.config/hypr/hyprland.conf (or a file you `source` from it), then run
+# `hyprctl reload` and restart BEE Timer.
+#
+# On Hyprland 0.57 the runtime commands `hyprctl keyword windowrulev2 ...`
+# and `hyprctl keyword windowrule ...` both returned "unknown request" —
+# rules must be edited in a config file, then reloaded.
+# ===========================================================================
+
+# --- Hyprland <= 0.52: windowrulev2 syntax --------------------------------
+# windowrulev2 = float,class:^(bee-timer)$
+# windowrulev2 = size 400 320,class:^(bee-timer)$
+# windowrulev2 = pin,class:^(bee-timer)$
 # Optional: force keyboard focus so Space (pause) always reaches the widget.
 # This can steal focus from games/editors — omit it if that is a problem.
-windowrulev2 = stayfocused,class:^(bee-timer)$
+# windowrulev2 = stayfocused,class:^(bee-timer)$
 # Optional: explicit position (absolute layout coordinates; adjust per monitor)
 # windowrulev2 = move 1500 40,class:^(bee-timer)$
 
-# === Hyprland 0.53+: windowrule syntax ====================================
+# --- Hyprland 0.53+: hybrid windowrule syntax -----------------------------
 # Commas followed by spaces; rule name `stay_focused`.
 # windowrule = float, class:^(bee-timer)$
 # windowrule = size 400 320, class:^(bee-timer)$
 # windowrule = pin, class:^(bee-timer)$
 # windowrule = stay_focused, class:^(bee-timer)$
 # windowrule = move 1500 40, class:^(bee-timer)$
+
 
 # ---------------------------------------------------------------------------
 # Notes
@@ -42,5 +65,11 @@ windowrulev2 = stayfocused,class:^(bee-timer)$
 #    Hyprland honors _NET_WM_STATE_ABOVE. Native Wayland (BEE_TIMER_OZONE=
 #    wayland) has no toplevel always-on-top protocol, so pin + this rule set
 #    is your best approximation.
+#  * If a dotfiles/framework setup (Caelestia, KooL dots, etc.) generates your
+#    config, put the block in your user-overrides file instead of the
+#    generated main config, or it may be overwritten.
+#  * install.sh can add this for you: it prompts on Hyprland-detected systems,
+#    backs up the file, skips duplicate rules, and runs `hyprctl reload`.
+#    `install.sh --uninstall` removes the block it added.
 #  * More: docs/HYPRLAND.md in the BEE Timer repository.
 # ---------------------------------------------------------------------------

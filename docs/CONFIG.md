@@ -26,6 +26,7 @@ If the file is missing, unreadable, or invalid JSON, the app logs a warning and 
 | `tickBaseMs` | number | `1000` | always `1000` | Base length of one game second. Fixed — speed distortion multiplies it at runtime. |
 | `maxRemainingMs` | number | `86400000` (24h) | always 24h | Upper cap for remaining time. Doubling and additions can never exceed this. Fixed. |
 | `midRunSettings` | boolean | `true` | `true` / `false` | Allow opening Settings while the countdown is running. When `false`, the gear button is disabled during an active run. |
+| `notifyAllEvents` | boolean | `false` | `true` / `false` | Send a desktop notification for **every** chaos event (in-app toast included), not just bee puns. Needs a notification daemon; see [HYPRLAND.md](HYPRLAND.md#notifications). |
 | `features` | object | see below | — | Per-feature toggles and odds. |
 | `appearance` | object | see below | — | Visual options. |
 | `window` | object | see below | — | Window state. |
@@ -51,7 +52,7 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
 
 | Key | Type | Default | Range / allowed | Meaning |
 | --- | --- | --- | --- | --- |
-| `theme` | string | `"honey"` | always `"honey"` | Theme id. Only one theme exists; the value is forced on load. |
+| `theme` | string | `"dark"` | `"dark"` or `"light"` | Theme id. `"dark"` is the default dark-honey look; `"light"` is the cream/honey light theme (Settings → App → **Light mode**). Old configs containing `"honey"` are migrated to `"dark"`. |
 | `reducedMotion` | boolean | `false` | `true` / `false` | Calms animations (bee swarm, shake, pulses). |
 | `opacity` | number | `0.97` | 0.6 – 1.0 | Window-level opacity. |
 
@@ -77,6 +78,7 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
   "tickBaseMs": 1000,
   "maxRemainingMs": 86400000,
   "midRunSettings": true,
+  "notifyAllEvents": false,
   "features": {
     "addSecond":       { "enabled": true,  "chancePct": 5 },
     "addMinute":       { "enabled": true,  "chancePct": 1 },
@@ -90,7 +92,7 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
     "restMode":        { "enabled": true,  "chancePct": 0.5, "restMs": 180000, "cooldownMs": 300000 }
   },
   "appearance": {
-    "theme": "honey",
+    "theme": "dark",
     "reducedMotion": false,
     "opacity": 0.97
   },
@@ -109,7 +111,9 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
 - **Sanitized on load.** Missing keys take defaults; wrong types are ignored (the default wins); numbers are clamped to the ranges above and rounded where noted. You can't brick the app with a bad `config.json` — worst case you get defaults plus a console warning.
 - **Sanitized on save.** The renderer sends a patch to the main process via IPC (`config:save`); the main process deep-merges known sub-objects (`features`, `appearance`, `window`), re-sanitizes, and writes atomically. Unknown keys are discarded.
 - **Mid-run edits apply immediately** (when `midRunSettings` is `true`): changes are pushed into the running engine, so raising a chance or disabling a feature takes effect on the next tick. The duration (`durationMs`) is only applied on the next run/reset; the engine keeps its current remaining time.
-- **Reset defaults** in Settings restores feature blocks, `midRunSettings`, `reducedMotion`, and `alwaysOnTop` — it does not change `onboarded` or `durationMs`.
+- **Reset defaults** in Settings restores feature blocks, `midRunSettings`, `notifyAllEvents`, `appearance.theme`, `reducedMotion`, and `alwaysOnTop` — it does not change `onboarded` or `durationMs`.
 - **Run state is not persisted.** Closing or relaunching the app does not save the remaining time, tick count, freeze/rest state, or statistics. A fresh launch shows the full configured duration, paused, and the button reads **Start**; press it (or Space) to begin.
-- **`tickBaseMs`, `maxRemainingMs`, `schemaVersion`, and `appearance.theme` are effectively fixed.** Editing them has no effect; the sanitizer writes the canonical values back.
+- **Theme migration.** Configs written before 0.1.2 stored `appearance.theme` as `"honey"` (or omitted it). That is read as the default `"dark"` and rewritten as `"dark"` on the next save; use `"light"` for the cream/honey light mode. Toggling **Light mode** in Settings → App writes this key.
+- **`notifyAllEvents` is about the OS notification only.** Chaos events are already surfaced in the app; when this key is `true`, each one is also sent to the system notification daemon (plus an in-app toast). It needs a running daemon (mako/dunst/swaync/fnott/…) — otherwise there is nothing to display, just like bee puns. Check **Settings → Setup & integration** for daemon status.
+- **`tickBaseMs`, `maxRemainingMs`, and `schemaVersion` are effectively fixed.** Editing them has no effect; the sanitizer writes the canonical values back.
 - **`chancePct` is per tick, not per run.** At 1% and one tick per second, an effect fires on roughly 1 in 100 ticks.
