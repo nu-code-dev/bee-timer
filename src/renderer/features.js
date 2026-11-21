@@ -1,79 +1,99 @@
 /**
- * UI metadata for every chaos feature. Order = display order.
- * `advanced: true` features are collapsed under "Advanced (danger zone)".
+ * UI metadata for every chaos feature.
+ *
+ * Descriptions intentionally do NOT contain percentages: the per-tick chance is
+ * editable right next to each toggle, so a hard-coded "5% per tick" would go
+ * stale the moment the user changes it.
+ *
+ * `group: 'advanced'` features live under "Advanced · don't touch" so the
+ * disruptive ones are kept away from the regular chaos switches.
  */
 export const FEATURES = [
   {
     key: 'addSecond',
     icon: '⏱️',
     title: '+1 Second',
-    desc: '5% per tick. A whole extra second. Petty.',
-    chance: true,
+    desc: 'A whole extra second. Petty.',
+    group: 'core',
   },
   {
     key: 'addMinute',
     icon: '😈',
     title: '+1 Minute',
-    desc: '1% per tick. Emotionally devastating.',
-    chance: true,
+    desc: 'A full extra minute. Emotionally devastating.',
+    group: 'core',
   },
   {
     key: 'doubleTime',
     icon: '✖️',
     title: 'Double Time',
-    desc: '1% per tick. Doubles whatever is left.',
-    chance: true,
+    desc: 'Doubles whatever time you have left.',
+    group: 'core',
+  },
+  {
+    key: 'halveTime',
+    icon: '➗',
+    title: 'Halve Time',
+    desc: 'Cuts your remaining time in half. Brutal.',
+    group: 'core',
   },
   {
     key: 'freeze',
     icon: '❄️',
     title: 'Freeze Timer',
-    desc: '5% per tick. Pauses the countdown for 5 cycles.',
-    chance: true,
+    desc: 'Pauses the countdown for a few cycles.',
+    group: 'core',
   },
   {
     key: 'formatChaos',
     icon: '🔀',
     title: 'Formatting Chaos',
-    desc: '5% per tick. Swaps min/sec or rounds to the nearest minute.',
-    chance: true,
+    desc: 'Swaps minutes/seconds or rounds the display. Display only.',
+    group: 'core',
   },
   {
     key: 'speedDistortion',
     icon: '🌀',
     title: 'Speed Distortion',
-    desc: '10% per tick. A second becomes 2× or 0.5× as long.',
-    chance: true,
+    desc: 'A second becomes 2× or 0.5× as long, for a while.',
+    group: 'core',
+    extras: [{ key: 'durationTicks', label: 'ticks', min: 1, max: 60, step: 1 }],
   },
   {
     key: 'beePuns',
     icon: '💬',
-    title: 'BEE Pun Notifications',
-    desc: '1% per tick. Desktop notification with a bee pun.',
-    chance: true,
+    title: 'Supportive BEE Messages',
+    desc: 'A kind message from the hive. No puns — just support.',
+    group: 'core',
   },
   {
     key: 'restMode',
     icon: '🧘',
     title: 'Rest Mode',
-    desc: '0.5% per tick. A 3-minute skippable break. Pure mercy.',
-    chance: true,
+    desc: 'A skippable 3-minute break. Pure mercy.',
+    group: 'core',
+  },
+  {
+    key: 'distortingChaos',
+    icon: '♾️',
+    title: 'Distorting Chaos',
+    desc: 'Makes speed distortion permanent and compounding. Requires Speed Distortion.',
+    group: 'advanced',
   },
   {
     key: 'originalBeeMode',
     icon: '🐝',
     title: 'Original BEE Mode',
-    desc: '1% per tick. Plays a literal BEE sound. Unhinged.',
-    chance: true,
+    desc: 'Plays a literal BEE sound. Unhinged.',
+    group: 'advanced',
     spicy: true,
   },
   {
     key: 'windowChaos',
     icon: '🪟',
     title: 'Window Teleport',
-    desc: '1% per tick. Randomly moves the window. Off by default.',
-    chance: true,
-    advanced: true,
+    desc: 'Randomly moves the window. Off by default.',
+    group: 'advanced',
   },
 ];
 

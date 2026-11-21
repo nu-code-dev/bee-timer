@@ -54,7 +54,7 @@
               <span class="hint">everything on by default</span>
             </div>
             <div id="wizardFeatures" class="feature-list"></div>
-            <button id="advancedToggle" class="linkish" aria-expanded="false">Advanced · danger zone <span>▾</span></button>
+            <button id="advancedToggle" class="linkish" aria-expanded="false">Advanced · don't touch <span>▾</span></button>
             <div id="advancedPanel" class="advanced hidden"></div>
           </div>
 
@@ -78,19 +78,22 @@
                 <span class="muted">this second</span>
               </div>
             </div>
-            <div class="status-row">
+          </div>
+
+          <div class="timer-controls">
+            <div class="controls-main">
+              <button id="pauseBtn" class="pill-btn">Pause</button>
+              <button id="resetBtn" class="pill-btn ghost">Reset</button>
+              <button id="settingsBtn" class="icon-btn big" title="Settings" aria-label="Settings">⚙️</button>
+            </div>
+            <div class="controls-status">
               <span id="freezeChip" class="status-chip hidden">❄️ frozen</span>
               <span id="restChip" class="status-chip hidden">🧘 resting</span>
               <span id="speedChip" class="status-chip hidden">🌀 2×</span>
               <span id="pauseChip" class="status-chip hidden">⏸ paused</span>
             </div>
           </div>
-
-          <div class="timer-controls">
-            <button id="pauseBtn" class="pill-btn">Pause</button>
-            <button id="resetBtn" class="pill-btn ghost">Reset</button>
-            <button id="settingsBtn" class="icon-btn big" title="Settings" aria-label="Settings">⚙️</button>
-          </div>
+          <p class="reset-quip">Reset might save you… or it might not. Only time will tell.</p>
 
           <div class="chaos-log"><ul id="logList"></ul></div>
         </div>
@@ -214,7 +217,10 @@ windowrulev2 = pin,class:^(bee-timer)$</pre>
           </div>
           <p id="settingsLiveNote" class="live-note">Changes apply immediately.</p>
 
+          <div class="feature-group-title">Chaos controls</div>
           <div id="settingsFeatures" class="feature-list"></div>
+          <div class="feature-group-title advanced-title">Advanced · don't touch</div>
+          <div id="settingsAdvancedFeatures" class="feature-list"></div>
 
           <div class="panel">
             <div class="panel-head"><h2>App</h2></div>
@@ -227,7 +233,7 @@ windowrulev2 = pin,class:^(bee-timer)$</pre>
               <input id="onTopToggle" type="checkbox" class="switch">
             </label>
             <label class="switch-row">
-              <span><strong>Reduce motion</strong><small>Calmer bees, fewer flips</small></span>
+              <span><strong>Reduce motion</strong><small>Stops swarms, screen shake and other big animations for a calmer, accessible experience. Short fades stay.</small></span>
               <input id="reducedMotionToggle" type="checkbox" class="switch">
             </label>
             <label class="switch-row">

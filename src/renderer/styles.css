@@ -748,3 +748,105 @@ body.light-mode .live-note { color: #3f7a34; }
 body.light-mode .live-note.locked { color: #b3261e; }
 body.light-mode .eyebrow { color: #a86f00; }
 body.light-mode .wizard .primary-btn, body.light-mode .primary-btn { color: #2b1d05; }
+
+/* ==================== controls row status chips + reset quip ============= */
+.timer-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  min-height: 34px;
+}
+.controls-main { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+.controls-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-left: auto;
+  flex-wrap: wrap;
+  max-width: 52%;
+}
+.controls-status .status-chip { font-size: 9px; padding: 2px 7px; white-space: nowrap; }
+.reset-quip {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 9.5px;
+  font-style: italic;
+  letter-spacing: 0.2px;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+/* ==================== settings groups + disabled/ignored rows ============ */
+.feature-group-title {
+  margin: 2px 0 4px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.feature-group-title.advanced-title { margin-top: 14px; color: var(--danger); opacity: 0.85; }
+.extra-field {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  opacity: 0.92;
+  margin-right: 2px;
+}
+.extra-field input {
+  width: 36px;
+  padding: 4px 2px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--honey);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-align: right;
+  outline: none;
+}
+.extra-field input:focus { border-color: var(--amber); }
+.extra-field span { font-size: 8.5px; color: var(--muted); }
+.feature-unavailable { opacity: 0.55; }
+.feature-unavailable .feature-copy strong::after {
+  content: "needs speed";
+  margin-left: 6px;
+  padding: 1px 4px;
+  border-radius: 5px;
+  background: rgba(255, 122, 107, 0.14);
+  color: var(--danger);
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+}
+.feature-row.config-ignored .chance-field,
+.feature-row.config-ignored .extra-field { opacity: 0.28; }
+.feature-row.config-ignored .feature-copy small::after {
+  content: " (ignored while Distorting Chaos is on)";
+  color: var(--amber);
+}
+.chance-field input:disabled,
+.extra-field input:disabled,
+.switch:disabled { cursor: not-allowed; }
+
+/* ==================== smooth chaos log (no per-tick flashing) ============ */
+.chaos-log li { animation: none; }
+@keyframes log-fly-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.chaos-log li.is-new { animation: log-fly-in 0.42s cubic-bezier(0.2, 0.8, 0.25, 1) both; }
+
+/* ==================== more visible scrollbars in light mode ============== */
+body.light-mode .screen::-webkit-scrollbar { width: 10px; }
+body.light-mode .screen::-webkit-scrollbar-track { background: rgba(150, 100, 20, 0.07); border-radius: 6px; }
+body.light-mode .screen::-webkit-scrollbar-thumb {
+  background: rgba(150, 100, 20, 0.45);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+body.light-mode .screen::-webkit-scrollbar-thumb:hover { background: rgba(150, 100, 20, 0.65); background-clip: padding-box; }

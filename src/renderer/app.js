@@ -17,12 +17,16 @@ let swarmTimer = null;
 let rafId = null;
 let audioCtx = null;
 let draftDurationMs = 10 * 60 * 1000;
+let lastLogSignature = '';
+let lastLogNewestId = 0;
+const seenLogIds = new Set();
 
 const els = {};
 
 function cacheEls() {
   [
     'wizardScreen', 'timerScreen', 'settingsScreen', 'wizardFeatures', 'settingsFeatures',
+    'settingsAdvancedFeatures',
     'advancedPanel', 'advancedToggle', 'durationInput', 'durationHint', 'startBtn',
     'timeDisplay', 'formatBadge', 'secondLen', 'pulseFill', 'freezeChip', 'restChip',
     'speedChip', 'pauseChip', 'pauseBtn', 'resetBtn', 'settingsBtn', 'logList',
@@ -89,6 +93,7 @@ function syncPinButton() {
 async function persist() {
   try {
     config = await api.config.save(config);
+    if (els.settingsFeatures) syncFeatureControls();
   } catch (err) {
     console.error('[bee-timer] failed to save config', err);
   }
@@ -193,8 +198,8 @@ function bindWizard() {
     const isHidden = els.advancedPanel.classList.toggle('hidden');
     els.advancedToggle.setAttribute('aria-expanded', String(!isHidden));
     els.advancedToggle.innerHTML = isHidden
-      ? 'Advanced · danger zone <span>▾</span>'
-      : 'Advanced · danger zone <span>▴</span>';
+      ? "Advanced · don't touch <span>▾</span>"
+      : "Advanced · don't touch <span>▴</span>";
   });
 
   els.startBtn.addEventListener('click', startRun);
@@ -226,6 +231,7 @@ async function startRun() {
 function buildFeatureRow(feature) {
   const row = document.createElement('div');
   row.className = `feature-row${feature.spicy ? ' spicy' : ''}`;
+  row.dataset.featureKey = feature.key;
 
   const icon = document.createElement('span');
   icon.className = 'feature-icon';
@@ -240,27 +246,60 @@ function buildFeatureRow(feature) {
   desc.textContent = feature.desc;
   copy.append(title, desc);
 
+  const controls = [];
+
+  // Optional numeric extras (e.g. how many ticks a speed distortion lasts).
+  for (const extra of feature.extras || []) {
+    const wrap = document.createElement('label');
+    wrap.className = 'extra-field';
+    wrap.title = `${feature.title}: ${extra.label}`;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = String(extra.min ?? 1);
+    input.max = String(extra.max ?? 60);
+    input.step = String(extra.step ?? 1);
+    input.dataset.extraKey = extra.key;
+    input.dataset.extraFor = feature.key;
+    input.value = String(config.features[feature.key][extra.key]);
+    input.addEventListener('change', () => {
+      const raw = Number(input.value);
+      const fallback = config.features[feature.key][extra.key];
+      if (!Number.isFinite(raw)) {
+        input.value = String(fallback);
+        return;
+      }
+      const value = extra.step === 1 ? Math.round(raw) : raw;
+      setFeature(feature.key, { [extra.key]: clamp(value, extra.min ?? 1, extra.max ?? 60) });
+    });
+    const unit = document.createElement('span');
+    unit.textContent = extra.label;
+    wrap.append(input, unit);
+    controls.push(wrap);
+  }
+
+  // Per-tick chance (%) — editable, so descriptions never hard-code percentages.
   const chance = document.createElement('label');
   chance.className = 'chance-field';
-  chance.title = 'Chance per tick (%)';
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.min = '0';
-  input.max = '100';
-  input.step = '0.1';
-  input.dataset.chanceForKey = feature.key;
-  input.value = String(config.features[feature.key].chancePct);
-  input.addEventListener('change', () => {
-    const value = Number(input.value);
+  chance.title = 'Chance per tick (%) — arrow keys change it by 0.5%';
+  const chanceInput = document.createElement('input');
+  chanceInput.type = 'number';
+  chanceInput.min = '0';
+  chanceInput.max = '100';
+  chanceInput.step = '0.5';
+  chanceInput.dataset.chanceForKey = feature.key;
+  chanceInput.value = String(config.features[feature.key].chancePct);
+  chanceInput.addEventListener('change', () => {
+    const value = Number(chanceInput.value);
     if (!Number.isFinite(value)) {
-      input.value = String(config.features[feature.key].chancePct);
+      chanceInput.value = String(config.features[feature.key].chancePct);
       return;
     }
     setFeature(feature.key, { chancePct: clamp(value, 0, 100) });
   });
   const pct = document.createElement('span');
   pct.textContent = '%';
-  chance.append(input, pct);
+  chance.append(chanceInput, pct);
+  controls.push(chance);
 
   const toggle = document.createElement('input');
   toggle.type = 'checkbox';
@@ -270,7 +309,7 @@ function buildFeatureRow(feature) {
   toggle.setAttribute('aria-label', feature.title);
   toggle.addEventListener('change', () => setFeature(feature.key, { enabled: toggle.checked }));
 
-  row.append(icon, copy, chance, toggle);
+  row.append(icon, copy, ...controls, toggle);
   return row;
 }
 
@@ -278,19 +317,28 @@ function buildFeatureLists() {
   els.wizardFeatures.innerHTML = '';
   els.advancedPanel.innerHTML = '';
   els.settingsFeatures.innerHTML = '';
+  els.settingsAdvancedFeatures.innerHTML = '';
 
   for (const feature of FEATURES) {
-    if (feature.advanced) {
+    if (feature.group === 'advanced') {
       els.advancedPanel.append(buildFeatureRow(feature));
+      els.settingsAdvancedFeatures.append(buildFeatureRow(feature));
     } else {
       els.wizardFeatures.append(buildFeatureRow(feature));
+      els.settingsFeatures.append(buildFeatureRow(feature));
     }
-    els.settingsFeatures.append(buildFeatureRow(feature));
   }
+  applyFeatureAvailability();
 }
 
 function setFeature(key, patch) {
   config.features[key] = { ...config.features[key], ...patch };
+
+  // Distorting Chaos requires Speed Distortion; keep them consistent.
+  if (key === 'speedDistortion' && !config.features.speedDistortion.enabled) {
+    config.features.distortingChaos = { ...config.features.distortingChaos, enabled: false };
+  }
+
   syncFeatureControls();
   notifyConfigChanged();
 }
@@ -304,7 +352,40 @@ function syncFeatureControls() {
     const key = input.dataset.chanceForKey;
     if (document.activeElement !== input) input.value = String(config.features[key]?.chancePct ?? 0);
   });
+  document.querySelectorAll('[data-extra-key]').forEach((input) => {
+    if (document.activeElement === input) return;
+    const key = input.dataset.extraFor;
+    const extraKey = input.dataset.extraKey;
+    input.value = String(config.features[key]?.[extraKey] ?? input.value);
+  });
+  applyFeatureAvailability();
   refreshSettingsState();
+}
+
+/**
+ * Distorting Chaos can only be enabled while Speed Distortion is on, and while
+ * it is on, Speed Distortion's own chance/duration inputs are ignored (greyed).
+ */
+function applyFeatureAvailability() {
+  const speedOn = Boolean(config.features.speedDistortion?.enabled);
+  const distortOn = Boolean(config.features.distortingChaos?.enabled);
+
+  document.querySelectorAll('[data-feature-key="distortingChaos"]').forEach((row) => {
+    row.classList.toggle('feature-unavailable', !speedOn);
+    row.querySelectorAll('[data-switch-for-key], [data-chance-for-key]').forEach((input) => {
+      input.disabled = !speedOn;
+    });
+  });
+
+  document.querySelectorAll('[data-feature-key="speedDistortion"]').forEach((row) => {
+    row.classList.toggle('config-ignored', distortOn);
+    row.querySelectorAll('[data-chance-for-key], [data-extra-key]').forEach((input) => {
+      input.disabled = distortOn;
+    });
+    row.title = distortOn
+      ? 'Speed Distortion chance/duration are ignored while Distorting Chaos is enabled.'
+      : '';
+  });
 }
 
 // --------------------------------------------------------------------------
@@ -376,7 +457,14 @@ function render(snapshot) {
   els.restChip.classList.toggle('hidden', !snapshot.rest);
   const showSpeed = snapshot.speedMult !== 1;
   els.speedChip.classList.toggle('hidden', !showSpeed);
-  if (showSpeed) els.speedChip.textContent = `🌀 ${snapshot.speedMult}×`;
+  if (showSpeed) {
+    const multLabel = Number.isInteger(snapshot.speedMult)
+      ? `${snapshot.speedMult}×`
+      : `${snapshot.speedMult}×`;
+    els.speedChip.textContent = snapshot.speedPermanent
+      ? `🌀 ${multLabel} ∞`
+      : `🌀 ${multLabel}`;
+  }
   els.pauseChip.classList.toggle('hidden', !(snapshot.running && snapshot.paused));
 
   els.pauseBtn.textContent = snapshot.ended
@@ -397,13 +485,31 @@ function render(snapshot) {
 }
 
 function renderLog(entries) {
-  if (!entries || !entries.length) {
-    els.logList.innerHTML = '<li><span class="log-icon">🐝</span><span>Waiting for chaos…</span></li>';
+  const list = entries || [];
+  if (!list.length) {
+    if (lastLogSignature !== '') {
+      lastLogSignature = '';
+      els.logList.innerHTML = '<li><span class="log-icon">🐝</span><span>Waiting for chaos…</span></li>';
+    }
     return;
   }
-  els.logList.innerHTML = entries
-    .slice(0, 4)
-    .map((entry) => `<li><span class="log-icon">${entry.icon}</span><span>${escapeHtml(entry.text)}</span></li>`)
+
+  const shown = list.slice(0, 4);
+  const signature = shown.map((entry) => entry.id).join(',');
+  if (signature === lastLogSignature) return; // nothing new — do not re-render/re-animate
+
+  // A new run restarts log ids at 1; clear the "seen" cache so entries animate again.
+  if (shown[0].id < lastLogNewestId) seenLogIds.clear();
+  lastLogSignature = signature;
+  lastLogNewestId = shown[0].id;
+  if (seenLogIds.size > 100) seenLogIds.clear();
+
+  els.logList.innerHTML = shown
+    .map((entry) => {
+      const fresh = !seenLogIds.has(entry.id);
+      seenLogIds.add(entry.id);
+      return `<li class="${fresh ? 'is-new' : ''}"><span class="log-icon">${entry.icon}</span><span>${escapeHtml(entry.text)}</span></li>`;
+    })
     .join('');
 }
 
@@ -423,7 +529,7 @@ function showEndScreen(snapshot) {
   const stats = snapshot.stats;
   els.endStats.textContent =
     `${stats.ticks} ticks survived · +${stats.secondsAdded}s · +${stats.minutesAdded}m · ` +
-    `${stats.doubles} doubles · ${stats.freezes} freezes · ${stats.rests} rests · ${stats.puns} puns`;
+    `${stats.doubles} doubles · ${stats.halved} halves · ${stats.freezes} freezes · ${stats.rests} rests · ${stats.puns} boosts`;
   if (!showEndScreen.shown) {
     showEndScreen.shown = true;
     playChime();
@@ -496,11 +602,14 @@ function describeEffect(effect) {
     case 'add-second': return '+1 second. The timer is being petty.';
     case 'add-minute': return '+1 minute. Bold of you to think you were close.';
     case 'double': return 'Remaining time DOUBLED. Why. Just why.';
+    case 'halve': return 'Remaining time cut in half. Brutal.';
     case 'freeze': return `Timer frozen for ${effect.cycles ?? 5} cycles.`;
     case 'format': return effect.kind === 'swap'
       ? 'Formatting chaos: minutes and seconds swapped.'
       : 'Formatting chaos: rounded to the nearest minute.';
-    case 'speed': return `Time is now ${effect.mult}× for ${effect.durationTicks} ticks.`;
+    case 'speed': return effect.permanent
+      ? `Distorting chaos: time is now permanently ${effect.mult}×.`
+      : `Time is now ${effect.mult}× for ${effect.durationTicks} ticks.`;
     case 'window': return 'The window got bored and moved.';
     case 'bees': return 'ORIGINAL BEE MODE. BZZZZZZZZZ.';
     case 'rest-start': return 'Rest mode: a 3-minute skippable break.';

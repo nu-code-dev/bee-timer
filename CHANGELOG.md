@@ -7,10 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet. The hive is resting.
+
+## [0.1.3] - 2026-11-21
+
+### Added
+
+- **Halve Time** chaos effect (cuts the remaining time in half).
+- **Distorting Chaos**: makes Speed Distortion permanent and compounding. Only
+  available while Speed Distortion is on; when enabled, Speed Distortion's chance
+  and duration are ignored and Distorting Chaos's own chance (default 1%) is used.
+- **Configurable Speed Distortion duration** (ticks input in Settings).
+- Supportive BEE messages (the old "pun" notifications are now kind, encouraging
+  messages), with clearer framing as a study/work timer feature.
+- Small reset quip under the controls; status chips moved next to the controls.
+
 ### Changed
 
-- `packaging/arch/`: bumped `bee-timer-bin` to 0.1.2 with the verified release
-  AppImage checksum; regenerated `.SRCINFO`.
+- Chaos-control descriptions no longer hard-code percentages (the value is
+  editable right next to each toggle); chance arrows now step by 0.5%.
+- Settings separates "Chaos controls" from "Advanced · don't touch"; the wizard
+  advanced section is renamed accordingly.
+- Chaos log entries animate in smoothly only when new instead of re-rendering
+  every tick.
+- Window teleport now works on Hyprland via `hyprctl eval` + `hl.dsp.window.move`
+  when the compositor ignores normal window moves.
+- Light mode scrollbars are more visible; reduced-motion description is clearer.
+- **AUR package** synced to the published release with the verified AppImage
+  checksum; `.SRCINFO` regenerated.
 
 ## [0.1.2] - 2026-11-21
 

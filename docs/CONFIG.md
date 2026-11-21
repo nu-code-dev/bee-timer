@@ -26,7 +26,7 @@ If the file is missing, unreadable, or invalid JSON, the app logs a warning and 
 | `tickBaseMs` | number | `1000` | always `1000` | Base length of one game second. Fixed — speed distortion multiplies it at runtime. |
 | `maxRemainingMs` | number | `86400000` (24h) | always 24h | Upper cap for remaining time. Doubling and additions can never exceed this. Fixed. |
 | `midRunSettings` | boolean | `true` | `true` / `false` | Allow opening Settings while the countdown is running. When `false`, the gear button is disabled during an active run. |
-| `notifyAllEvents` | boolean | `false` | `true` / `false` | Send a desktop notification for **every** chaos event (in-app toast included), not just bee puns. Needs a notification daemon; see [HYPRLAND.md](HYPRLAND.md#notifications). |
+| `notifyAllEvents` | boolean | `false` | `true` / `false` | Send a desktop notification for **every** chaos event (in-app toast included), not just supportive messages. Needs a notification daemon; see [HYPRLAND.md](HYPRLAND.md#notifications). |
 | `features` | object | see below | — | Per-feature toggles and odds. |
 | `appearance` | object | see below | — | Visual options. |
 | `window` | object | see below | — | Window state. |
@@ -40,12 +40,14 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
 | `addSecond` | `true` | `5` | — | Adds 1 second (clamped by `maxRemainingMs`). |
 | `addMinute` | `true` | `1` | — | Adds 60 seconds (clamped by `maxRemainingMs`). |
 | `doubleTime` | `true` | `1` | — | Doubles remaining time, capped at 24h. |
+| `halveTime` | `true` | `1` | — | Cuts remaining time in half (never below 1 second until the timer ends). |
 | `freeze` | `true` | `5` | `cycles`: `5` (1–60) | Pauses the countdown for N ticks. |
 | `formatChaos` | `true` | `5` | `swapMinSec`: `true`; `roundNearestMinute`: `true`; `durationTicks`: `3` (1–60) | Display-only chaos for N ticks: swap minutes/seconds or round to the nearest minute. Never changes real remaining time. |
-| `speedDistortion` | `true` | `10` | `multipliers`: `[0.5, 2]` (only 0.5 and 2 are valid); `durationTicks`: `4` (1–60) | Scales the real length of the next N ticks. 0.5× = 2s real per game second; 2× = 0.5s real. |
-| `windowChaos` | `false` | `1` | `marginPx`: `40` (0–400) | Randomly moves the window within the current monitor's work area. Hidden under "Advanced · danger zone". |
+| `speedDistortion` | `true` | `10` | `multipliers`: `[0.5, 2]` (only 0.5 and 2 are valid); `durationTicks`: `4` (1–60, editable in Settings) | Scales the real length of the next N ticks. 0.5× = 2s real per game second; 2× = 0.5s real. |
+| `distortingChaos` | `true` | `1` | — | Only active while `speedDistortion.enabled` is true (the sanitizer forces it off otherwise). Makes speed distortion **permanent and compounding**: each trigger multiplies the current speed (1× → 2× → 4×, or back down with 0.5×). While enabled, `speedDistortion`'s chance and `durationTicks` are ignored — this chance is used instead, and the speed never expires. |
+| `windowChaos` | `false` | `1` | `marginPx`: `40` (0–400) | Randomly moves the window within the current monitor's work area (uses `hyprctl eval` on Hyprland when native moves are ignored). Hidden under "Advanced · don't touch". |
 | `originalBeeMode` | `false` | `1` | `durationMs`: `4000` (500–30000) | Synthesized bee buzz + swarm overlay for the given duration. |
-| `beePuns` | `true` | `1` | — | Desktop notification with a bee pun (in-app toast always shown too). |
+| `beePuns` | `true` | `1` | — | Legacy key name for **Supportive BEE Messages**: kind, encouraging notifications (no puns) plus an in-app toast. |
 | `restMode` | `true` | `0.5` | `restMs`: `180000` (5000–3600000); `cooldownMs`: `300000` (0–3600000) | Starts a skippable rest during which the countdown pauses. Cannot retrigger while resting or during cooldown. |
 
 ### `appearance`
@@ -83,9 +85,11 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
     "addSecond":       { "enabled": true,  "chancePct": 5 },
     "addMinute":       { "enabled": true,  "chancePct": 1 },
     "doubleTime":      { "enabled": true,  "chancePct": 1 },
+    "halveTime":       { "enabled": true,  "chancePct": 1 },
     "freeze":          { "enabled": true,  "chancePct": 5, "cycles": 5 },
     "formatChaos":     { "enabled": true,  "chancePct": 5, "swapMinSec": true, "roundNearestMinute": true, "durationTicks": 3 },
     "speedDistortion": { "enabled": true,  "chancePct": 10, "multipliers": [0.5, 2], "durationTicks": 4 },
+    "distortingChaos": { "enabled": true,  "chancePct": 1 },
     "windowChaos":     { "enabled": false, "chancePct": 1, "marginPx": 40 },
     "originalBeeMode": { "enabled": false, "chancePct": 1, "durationMs": 4000 },
     "beePuns":         { "enabled": true,  "chancePct": 1 },
@@ -114,6 +118,6 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
 - **Reset defaults** in Settings restores feature blocks, `midRunSettings`, `notifyAllEvents`, `appearance.theme`, `reducedMotion`, and `alwaysOnTop` — it does not change `onboarded` or `durationMs`.
 - **Run state is not persisted.** Closing or relaunching the app does not save the remaining time, tick count, freeze/rest state, or statistics. A fresh launch shows the full configured duration, paused, and the button reads **Start**; press it (or Space) to begin.
 - **Theme migration.** Configs written before 0.1.2 stored `appearance.theme` as `"honey"` (or omitted it). That is read as the default `"dark"` and rewritten as `"dark"` on the next save; use `"light"` for the cream/honey light mode. Toggling **Light mode** in Settings → App writes this key.
-- **`notifyAllEvents` is about the OS notification only.** Chaos events are already surfaced in the app; when this key is `true`, each one is also sent to the system notification daemon (plus an in-app toast). It needs a running daemon (mako/dunst/swaync/fnott/…) — otherwise there is nothing to display, just like bee puns. Check **Settings → Setup & integration** for daemon status.
+- **`notifyAllEvents` is about the OS notification only.** Chaos events are already surfaced in the app; when this key is `true`, each one is also sent to the system notification daemon (plus an in-app toast). It needs a running daemon (mako/dunst/swaync/fnott/…) — otherwise there is nothing to display, just like supportive messages. Check **Settings → Setup & integration** for daemon status.
 - **`tickBaseMs`, `maxRemainingMs`, and `schemaVersion` are effectively fixed.** Editing them has no effect; the sanitizer writes the canonical values back.
 - **`chancePct` is per tick, not per run.** At 1% and one tick per second, an effect fires on roughly 1 in 100 ticks.

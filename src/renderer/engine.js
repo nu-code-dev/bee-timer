@@ -66,14 +66,20 @@ const EMPTY_STATS = () => ({
   secondsAdded: 0,
   minutesAdded: 0,
   doubles: 0,
+  halved: 0,
   freezes: 0,
   formats: 0,
   speeds: 0,
+  distortions: 0,
   windowTeleports: 0,
   beeModes: 0,
   puns: 0,
   rests: 0,
 });
+
+export function formatMult(mult) {
+  return Number.isInteger(mult) ? `${mult}\u00d7` : `${mult.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}\u00d7`;
+}
 
 export class BeeEngine {
   /**
@@ -171,11 +177,20 @@ export class BeeEngine {
   }
 
   updateConfig(config) {
+    const hadSpeed = this.speedMult !== 1;
+    const features = config.features || {};
     this.config = config;
     this.maxRemainingMs = Math.max(
       config.maxRemainingMs || DEFAULT_MAX_REMAINING_MS,
       this.remainingMs,
     );
+    const permanentLost = this.speedState.untilTick === Infinity
+      && (!features.distortingChaos?.enabled || !features.speedDistortion?.enabled);
+    const speedFeatureOff = !features.speedDistortion?.enabled;
+    if (hadSpeed && (permanentLost || speedFeatureOff)) {
+      this.speedState = { mult: 1, untilTick: 0 };
+      this.pushLog('🐝', 'Speed chaos switched off — time is normal again.');
+    }
     this.emit();
   }
 
@@ -299,6 +314,16 @@ export class BeeEngine {
       }
     }
 
+    if (this.roll('halveTime')) {
+      const before = this.remainingMs;
+      this.remainingMs = Math.max(1000, Math.floor(this.remainingMs / 2));
+      if (this.remainingMs < before) {
+        this.stats.halved += 1;
+        this.pushLog('➗', 'Remaining time cut in half. Brutal.');
+        this.onEffect({ type: 'halve' });
+      }
+    }
+
     if (this.roll('freeze')) {
       this.freezeTicks = features.freeze?.cycles ?? 5;
       this.stats.freezes += 1;
@@ -308,15 +333,33 @@ export class BeeEngine {
 
     if (this.roll('formatChaos')) this.triggerFormatChaos();
 
-    if (this.roll('speedDistortion')) {
-      const feature = features.speedDistortion;
+    const speedFeature = features.speedDistortion;
+    const distortFeature = features.distortingChaos;
+    const distortingActive = Boolean(speedFeature?.enabled && distortFeature?.enabled);
+
+    if (distortingActive) {
+      // Distorting Chaos: rare, permanent and compounding. Speed Distortion's
+      // own chance/duration are ignored while this is on.
+      if (this.roll('distortingChaos')) {
+        const multipliers = speedFeature?.multipliers?.length ? speedFeature.multipliers : [0.5, 2];
+        const chosen = multipliers[Math.floor(this.rng() * multipliers.length)] ?? 0.5;
+        const current = this.speedMult;
+        const next = Math.min(16, Math.max(0.125, Number((current * chosen).toFixed(3))));
+        this.speedState = { mult: next, untilTick: Infinity };
+        this.stats.speeds += 1;
+        this.stats.distortions += 1;
+        this.pushLog('♾️', `Distorting chaos: time is now permanently ${formatMult(next)}.`);
+        this.onEffect({ type: 'speed', mult: next, permanent: true });
+      }
+    } else if (this.roll('speedDistortion')) {
+      const feature = speedFeature;
       const multipliers = feature?.multipliers?.length ? feature.multipliers : [0.5, 2];
       const mult = multipliers[Math.floor(this.rng() * multipliers.length)] ?? 0.5;
       const duration = feature?.durationTicks ?? 4;
       this.speedState = { mult, untilTick: this.tick + duration };
       this.stats.speeds += 1;
-      this.pushLog('🌀', `Time is now ${mult}x speed for ${duration} ticks.`);
-      this.onEffect({ type: 'speed', mult, durationTicks: duration });
+      this.pushLog('🌀', `Time is now ${formatMult(mult)} for ${duration} ticks.`);
+      this.onEffect({ type: 'speed', mult, durationTicks: duration, permanent: false });
     }
 
     if (this.roll('windowChaos')) {
@@ -416,6 +459,7 @@ export class BeeEngine {
       tick: this.tick,
       frozenTicks: this.freezeTicks,
       speedMult,
+      speedPermanent: speedMult !== 1 && this.speedState.untilTick === Infinity,
       tickLengthMs: this.rest ? TICK_BASE_MS : Math.round(TICK_BASE_MS * speedMult),
       pulse: { startedAt: this.tickStartedAt, durationMs: this.nextTickDelay() },
       rest: this.rest

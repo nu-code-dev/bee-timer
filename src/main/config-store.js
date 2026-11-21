@@ -22,9 +22,11 @@ const DEFAULTS = Object.freeze({
     addSecond:      { enabled: true,  chancePct: 5 },
     addMinute:      { enabled: true,  chancePct: 1 },
     doubleTime:     { enabled: true,  chancePct: 1 },
+    halveTime:      { enabled: true,  chancePct: 1 },
     freeze:         { enabled: true,  chancePct: 5, cycles: 5 },
     formatChaos:    { enabled: true,  chancePct: 5, swapMinSec: true, roundNearestMinute: true, durationTicks: 3 },
     speedDistortion:{ enabled: true,  chancePct: 10, multipliers: [0.5, 2], durationTicks: 4 },
+    distortingChaos:{ enabled: true,  chancePct: 1 },
     windowChaos:    { enabled: false, chancePct: 1, marginPx: 40 },
     originalBeeMode:{ enabled: false, chancePct: 1, durationMs: 4000 },
     beePuns:        { enabled: true,  chancePct: 1 },
@@ -42,6 +44,7 @@ const FEATURE_RULES = {
   addSecond:       (d, i) => ({ enabled: bool(i.enabled, d.enabled), chancePct: num(i.chancePct, 0, 100, d.chancePct) }),
   addMinute:       (d, i) => ({ enabled: bool(i.enabled, d.enabled), chancePct: num(i.chancePct, 0, 100, d.chancePct) }),
   doubleTime:      (d, i) => ({ enabled: bool(i.enabled, d.enabled), chancePct: num(i.chancePct, 0, 100, d.chancePct) }),
+  halveTime:       (d, i) => ({ enabled: bool(i.enabled, d.enabled), chancePct: num(i.chancePct, 0, 100, d.chancePct) }),
   freeze:          (d, i) => ({
     enabled: bool(i.enabled, d.enabled),
     chancePct: num(i.chancePct, 0, 100, d.chancePct),
@@ -66,6 +69,10 @@ const FEATURE_RULES = {
       durationTicks: Math.round(num(i.durationTicks, 1, 60, d.durationTicks)),
     };
   },
+  distortingChaos: (d, i) => ({
+    enabled: bool(i.enabled, d.enabled),
+    chancePct: num(i.chancePct, 0, 100, d.chancePct),
+  }),
   windowChaos:     (d, i) => ({
     enabled: bool(i.enabled, d.enabled),
     chancePct: num(i.chancePct, 0, 100, d.chancePct),
@@ -94,6 +101,9 @@ function sanitizeConfig(input) {
     const item = rawFeatures[key] && typeof rawFeatures[key] === 'object' ? rawFeatures[key] : {};
     features[key] = rule(def, item);
   }
+  // Distorting Chaos only makes sense while Speed Distortion is enabled.
+  if (!features.speedDistortion.enabled) features.distortingChaos.enabled = false;
+
   const appearance = raw.appearance && typeof raw.appearance === 'object' ? raw.appearance : {};
   const win = raw.window && typeof raw.window === 'object' ? raw.window : {};
   const x = typeof win.x === 'number' && Number.isFinite(win.x) ? Math.round(win.x) : null;

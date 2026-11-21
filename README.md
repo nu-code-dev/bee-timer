@@ -1,6 +1,6 @@
 # 🐝 BEE Timer
 
-**A floating, always-on-top study/work timer that refuses to let you stop early.** Start a focus block and the timer fights back — extra seconds, extra minutes, doubled time, freezes, scrambled formatting, warped tick speeds, bee puns, and a literal buzzing bee. Perfect for beating procrastination by making the finish line wonderfully unreliable.
+**A floating, always-on-top study/work timer that refuses to let you stop early.** Start a focus block and the timer fights back — extra seconds, extra minutes, doubled time, halved time, freezes, scrambled formatting, warped tick speeds, supportive bee messages, and a literal buzzing bee. Perfect for beating procrastination by making the finish line wonderfully unreliable.
 
 A bee-themed love letter to [DougDoug's chaotic countdown timer](https://youtu.be/FTUdUAfcsfY).
 
@@ -8,7 +8,7 @@ A bee-themed love letter to [DougDoug's chaotic countdown timer](https://youtu.b
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-6b4f1d.svg)](#install)
 [![Electron](https://img.shields.io/badge/Electron-45-9feaf9.svg)](https://www.electronjs.org/)
 
-Set a study or work block — 10 minutes by default, or 25/50 minutes for a proper pomodoro-style session — and hit Start. The timer then does its best to keep you going: it adds seconds, adds minutes, doubles what's left, freezes, scrambles the display, warps how long a second lasts, fires bee puns, and occasionally buzzes at you. You can't trust the clock, so the only sensible move is to keep working until the bees finally relent.
+Set a study or work block — 10 minutes by default, or 25/50 minutes for a proper pomodoro-style session — and hit Start. The timer then does its best to keep you going: it adds seconds, adds minutes, doubles (or halves) what's left, freezes, scrambles the display, warps how long a second lasts, sends supportive bee messages, and occasionally buzzes at you. You can't trust the clock, so the only sensible move is to keep working until the bees finally relent.
 
 <p align="center">
   <img src="docs/screenshot-wizard.png" alt="BEE Timer onboarding wizard: choose a duration, arm the chaos" width="820">
@@ -22,7 +22,7 @@ Procrastination thrives on the exit door being one glance away. BEE Timer makes 
 - **Sessions naturally run longer.** +1s, +1m and Double Time events stretch a short block into a longer one. Set 25 or 50 minutes and let it overrun — that's the feature, not a bug.
 - **Breaks instead of quitting.** Rest Mode pauses the clock for a skippable 3-minute break, so you can recover without abandoning the session.
 - **Less clock-watching.** Formatting Chaos swaps minutes/seconds and rounds the display, breaking the habit of staring at the timer instead of the task.
-- **Momentum through nonsense.** Bee puns, the chaos log, and the occasional swarm keep the session playful enough that you don't negotiate your way out of it.
+- **Encouragement instead of nagging.** Supportive BEE messages drop in with a kind nudge exactly when you need one — a cheerleader, not a guilt trip. The chaos log and the occasional swarm keep the session playful enough that you don't negotiate your way out of it.
 
 It's not productivity magic — it's a timer that turns "one more minute" from a guilty excuse into the actual rules of the game. Use it for studying, focused work, writing, revision, or a stream challenge; the duration and every effect are yours to tune.
 
@@ -35,10 +35,12 @@ Every feature is independently toggleable and has a per-tick probability you can
 | ⏱️ +1 Second | 5% | **On** | Adds a second. Petty. |
 | 😈 +1 Minute | 1% | **On** | Adds 60 seconds. Emotionally devastating. |
 | ✖️ Double Time | 1% | **On** | Doubles remaining time (capped at 24h). |
+| ➗ Halve Time | 1% | **On** | Cuts remaining time in half. |
 | ❄️ Freeze Timer | 5% | **On** | Pauses the countdown for 5 cycles. |
 | 🔀 Formatting Chaos | 5% | **On** | Swaps min/sec or rounds the display — display only, never corrupts the real clock. |
-| 🌀 Speed Distortion | 10% | **On** | A tick becomes 0.5× or 2× as long, for 4 ticks. |
-| 💬 BEE Pun Notifications | 1% | **On** | Desktop notification with one of ~60 puns; falls back to an in-app toast. |
+| 🌀 Speed Distortion | 10% | **On** | A tick becomes 0.5× or 2× as long, for a configurable number of ticks (default 4). |
+| ♾️ Distorting Chaos | 1% | **On** | Makes speed distortion permanent and compounding (2× → 4× → 8×, or back down with 0.5×). Requires Speed Distortion; while on, its own chance replaces Speed Distortion's chance/duration. |
+| 💬 Supportive BEE Messages | 1% | **On** | A kind, encouraging message from the hive (no puns). Desktop notification plus in-app toast. |
 | 🧘 Rest Mode | 0.5% | **On** | Gives you a 3-minute break (skippable) with a 5-minute cooldown. |
 | 🐝 Original BEE Mode | 1% | Off | Synthesized bee buzz + a swarm overlay. Unhinged. |
 | 🪟 Window Teleport | 1% | Off | Randomly moves the window. Tucked under **Advanced · danger zone**. |
@@ -51,7 +53,7 @@ Other touches: draggable frameless titlebar, pin/always-on-top button, pulse met
 </p>
 <p>
   <img src="docs/screenshot-rest.png" alt="Rest Mode overlay: a skippable three-minute break" width="49%">
-  <img src="docs/screenshot-toast.png" alt="In-app bee pun toast falling back from a desktop notification" width="49%">
+  <img src="docs/screenshot-toast.png" alt="Supportive bee message toast" width="49%">
 </p>
 <p>
   <img src="docs/screenshot-timer-light.png" alt="BEE Timer in light mode" width="49%">
@@ -79,7 +81,7 @@ curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.
 - optional interactive prompts, defaulting to **No** (and reading from `/dev/tty`, so `curl | bash` still works): install `mako` on Arch when no notification daemon is running (other distros get package-manager advice), and append BEE Timer window rules to your Hyprland config (Lua `hyprland.lua` when present, legacy `hyprland.conf` otherwise). The rule edit backs the file up, skips duplicate rules, and runs `hyprctl reload` when available.
 - unattended installs: `BEE_TIMER_YES=1` accepts both prompts; with no TTY the answers stay No
 - uninstall with: `curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash -s -- --uninstall` — this also removes the BEE Timer rule block the installer added to your Hyprland config, leaving the rest of the file and your app config untouched
-- `BEE_TIMER_PREFIX=/usr/local` with `sudo` for a system-wide install, `BEE_TIMER_VERSION=0.1.2` to pin a release
+- `BEE_TIMER_PREFIX=/usr/local` with `sudo` for a system-wide install, `BEE_TIMER_VERSION=0.1.3` to pin a release
 - completely optional — the AUR package, AppImage, `.deb`, and source builds below all still work
 - the same setup notes (notification-daemon status, copyable Hyprland snippets, installed paths, uninstall command) are inside the app under **Settings → Setup & integration**
 
@@ -98,20 +100,20 @@ That installs the release AppImage to `/opt/bee-timer/` behind a `/usr/bin/bee-t
 
 ### Direct download (Linux)
 
-Grab `bee-timer-0.1.2-x86_64.AppImage` or `bee-timer-0.1.2-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.2`):
+Grab `bee-timer-0.1.3-x86_64.AppImage` or `bee-timer-0.1.3-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.3`):
 
 ```bash
 # AppImage
-chmod +x bee-timer-0.1.2-x86_64.AppImage
-./bee-timer-0.1.2-x86_64.AppImage
+chmod +x bee-timer-0.1.3-x86_64.AppImage
+./bee-timer-0.1.3-x86_64.AppImage
 
 # Debian / Ubuntu
-sudo apt install ./bee-timer-0.1.2-amd64.deb
+sudo apt install ./bee-timer-0.1.3-amd64.deb
 ```
 
 ### Windows and macOS
 
-Windows (`NSIS` installer, `bee-timer-0.1.2-x64.exe`) and macOS (`bee-timer-0.1.2-arm64.dmg`, Apple Silicon) builds are produced by GitHub Actions on every release — see [Releases](https://github.com/nu-code-dev/bee-timer/releases). **Windows/macOS builds are CI-produced and unsigned; they are not smoke-tested on real Windows/macOS hardware by the maintainer yet.** They are **unsigned**:
+Windows (`NSIS` installer, `bee-timer-0.1.3-x64.exe`) and macOS (`bee-timer-0.1.3-arm64.dmg`, Apple Silicon) builds are produced by GitHub Actions on every release — see [Releases](https://github.com/nu-code-dev/bee-timer/releases). **Windows/macOS builds are CI-produced and unsigned; they are not smoke-tested on real Windows/macOS hardware by the maintainer yet.** They are **unsigned**:
 
 - **Windows:** SmartScreen will show "Windows protected your PC" → *More info* → *Run anyway*.
 - **macOS:** Gatekeeper will block the app → right-click the app → *Open*, or allow it under *System Settings → Privacy & Security*.
@@ -151,7 +153,7 @@ windowrule = pin, class:^(bee-timer)$
 
 The one-line installer offers to add these rules for you when it detects Hyprland (Lua first, `.conf` fallback; it backs up the file, skips duplicates, and reloads), or prints the snippet if you decline. Either way, the snippet is also copyable in-app under **Settings → Setup & integration**, and ships as [`packaging/arch/hyprland.conf.snippet`](packaging/arch/hyprland.conf.snippet).
 
-Check `hyprctl clients` to confirm the window class is `bee-timer`. Notifications need a `notify-send`-compatible daemon (`mako`, `dunst`, `swaync`, `fnott`, …): on Arch `sudo pacman -S mako`, then start it with `mako &` or add it to your compositor autostart. Without a daemon, bee puns and chaos-event notifications fall back to in-app toasts; **Settings → Setup & integration** shows the detected daemon status. Audio is synthesized via WebAudio and needs PipeWire or PulseAudio. Full guide, positioning tips, and troubleshooting: [docs/HYPRLAND.md](docs/HYPRLAND.md).
+Check `hyprctl clients` to confirm the window class is `bee-timer`. Notifications need a `notify-send`-compatible daemon (`mako`, `dunst`, `swaync`, `fnott`, …): on Arch `sudo pacman -S mako`, then start it with `mako &` or add it to your compositor autostart. Without a daemon, supportive messages and chaos-event notifications fall back to in-app toasts; **Settings → Setup & integration** shows the detected daemon status. Audio is synthesized via WebAudio and needs PipeWire or PulseAudio. Full guide, positioning tips, and troubleshooting: [docs/HYPRLAND.md](docs/HYPRLAND.md).
 
 ## Controls
 
@@ -208,7 +210,7 @@ npm run dist:win     # Windows installer — run on Windows or CI
 npm run dist:mac     # macOS .dmg — run on macOS or CI
 ```
 
-Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.2-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.2-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
+Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.3-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.3-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
 
 ## Testing
 
@@ -225,7 +227,7 @@ src/
     app.js          UI wiring, audio synthesis, effects
     index.html      Screens: wizard, timer widget, settings
     styles.css      Honey-themed frameless widget styling
-    puns.js         ~60 bee puns
+    puns.js         ~60 supportive bee messages (legacy filename)
   main/preload.js   contextBridge API (window.bee)
 test/          Node test runner suite for the engine
 build/         icon.png (generated by scripts/make-icon.js)

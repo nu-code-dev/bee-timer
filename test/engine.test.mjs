@@ -12,9 +12,11 @@ function makeConfig({ durationMs = 60_000, maxRemainingMs = 86_400_000, features
       addSecond: off(),
       addMinute: off(),
       doubleTime: off(),
+      halveTime: off(),
       freeze: off({ cycles: 5 }),
       formatChaos: off({ swapMinSec: true, roundNearestMinute: true, durationTicks: 3 }),
       speedDistortion: off({ multipliers: [0.5, 2], durationTicks: 4 }),
+      distortingChaos: off(),
       windowChaos: off({ marginPx: 40 }),
       originalBeeMode: off({ durationMs: 4000 }),
       beePuns: off(),
@@ -272,4 +274,45 @@ test('+1 minute fires ~1% of ticks with a seeded RNG', () => {
   const hits = snap.stats.minutesAdded;
   const rate = hits / ticks;
   assert.ok(rate > 0.007 && rate < 0.013, `expected ~1%, got ${(rate * 100).toFixed(2)}% (${hits} hits)`);
+});
+
+
+test('halve time cuts the remaining time in half', () => {
+  const config = makeConfig({ features: { halveTime: { enabled: true, chancePct: 100 } } });
+  const { engine, step, snap } = harness(config);
+  engine.start();
+  step(1); // 60000 - 1000 = 59000, then halved
+  assert.equal(snap.remainingMs, 29_500);
+  assert.equal(snap.stats.halved, 1);
+});
+
+test('distorting chaos makes speed permanent and compounding', () => {
+  const config = makeConfig({
+    features: {
+      speedDistortion: { enabled: true, chancePct: 100, multipliers: [2], durationTicks: 4 },
+      distortingChaos: { enabled: true, chancePct: 100 },
+    },
+  });
+  const { engine, step, snap, liveTimers } = harness(config, { rng: () => 0 });
+  engine.start();
+  step(1);
+  assert.equal(snap.speedMult, 2);
+  assert.equal(snap.speedPermanent, true);
+  step(1);
+  assert.equal(snap.speedMult, 4); // compounds 2x -> 4x
+  assert.equal(liveTimers()[0].delay, 4000);
+});
+
+test('distorting chaos does nothing when speed distortion is disabled', () => {
+  const config = makeConfig({
+    features: {
+      speedDistortion: { enabled: false, chancePct: 100, multipliers: [2], durationTicks: 4 },
+      distortingChaos: { enabled: true, chancePct: 100 },
+    },
+  });
+  const { engine, step, snap } = harness(config, { rng: () => 0 });
+  engine.start();
+  step(3);
+  assert.equal(snap.speedMult, 1);
+  assert.equal(snap.speedPermanent, false);
 });

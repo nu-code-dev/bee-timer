@@ -140,6 +140,14 @@ function dbusNotificationsAvailable() {
   });
 }
 
+function runCommand(command, args) {
+  return new Promise((resolve) => {
+    execFile(command, args, { timeout: 2000 }, (error, stdout) => {
+      resolve({ ok: !error, output: String(stdout || '') });
+    });
+  });
+}
+
 async function notifyStatus() {
   const [processName, dbus] = await Promise.all([
     findProcess(NOTIFIER_NAMES),
@@ -180,7 +188,7 @@ ipcMain.handle('window:set-always-on-top', (_event, value) => {
   return mainWindow.isAlwaysOnTop();
 });
 
-ipcMain.handle('window:chaos-move', (_event, marginPx = 40) => {
+ipcMain.handle('window:chaos-move', async (_event, marginPx = 40) => {
   if (!mainWindow) return null;
   const bounds = mainWindow.getBounds();
   const display = screen.getDisplayMatching(bounds);
@@ -192,8 +200,29 @@ ipcMain.handle('window:chaos-move', (_event, marginPx = 40) => {
     x: Math.round(wa.x + margin + Math.random() * Math.max(1, maxX - wa.x - margin)),
     y: Math.round(wa.y + margin + Math.random() * Math.max(1, maxY - wa.y - margin)),
   };
-  mainWindow.setPosition(pos.x, pos.y, false);
-  return pos;
+
+  // First try the normal window-manager path (X11/XWayland honors setBounds).
+  mainWindow.setBounds({ x: pos.x, y: pos.y, width: bounds.width, height: bounds.height }, false);
+
+  // Wayland clients cannot move themselves, and some Hyprland tiling setups
+  // ignore toplevel move requests. Hyprland's IPC can always place the window,
+  // so use it as a fallback/confirmation when available.
+  let movedVia = 'wm';
+  if (process.env.HYPRLAND_INSTANCE_SIGNATURE || process.env.WAYLAND_DISPLAY) {
+    // Hyprland 0.57+ exposes a Lua API: hyprctl dispatch no longer accepts the
+    // legacy "dispatcher args" syntax, while hyprctl eval runs Lua directly.
+    await runCommand('hyprctl', [
+      'eval',
+      'hl.dispatch(hl.dsp.window.float({ window = "class:bee-timer", action = "on" }))',
+    ]);
+    const moved = await runCommand('hyprctl', [
+      'eval',
+      `hl.dispatch(hl.dsp.window.move({ x = ${pos.x}, y = ${pos.y}, relative = false, window = "class:bee-timer" }))`,
+    ]);
+    if (moved.ok) movedVia = 'hyprland';
+  }
+
+  return { ...pos, movedVia };
 });
 
 ipcMain.handle('notify:show', (_event, { title, body } = {}) => {
