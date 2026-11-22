@@ -15,7 +15,7 @@
 # asset (electron-builder artifactName: bee-timer-${version}-${arch}.${ext}).
 
 pkgname=bee-timer-bin
-pkgver=0.1.8
+pkgver=0.1.10
 pkgrel=1
 pkgdesc='Chaotic study/work countdown timer that fights procrastination (DougDoug-inspired)'
 arch=('x86_64')
