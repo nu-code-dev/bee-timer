@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet. The hive is resting.
 
+## [0.1.10] - 2026-11-22
+
+### Changed
+
+- **Freeze Timer now defaults to 1%/tick** (was 5%) — freezes were far too
+  frequent. v2 configs still on the old 5% default migrate once; custom values
+  are preserved.
+- **Rest Mode fits compact mode:** when the window is collapsed to the timer,
+  the rest overlay becomes a slim bar with the countdown + Skip button instead
+  of the full card.
+
 ## [0.1.9] - 2026-11-22
 
 ### Changed

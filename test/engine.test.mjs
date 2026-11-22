@@ -409,21 +409,32 @@ test('Double Time and Halve Time fire at statistically equal rates', () => {
 });
 
 
-test('formatting chaos default is 1% and old 5% configs migrate once', () => {
+test('formatting chaos + freeze default to 1% and old defaults migrate once', () => {
   const fresh = sanitizeConfig({});
   assert.equal(fresh.features.formatChaos.chancePct, 1);
+  assert.equal(fresh.features.freeze.chancePct, 1);
 
   const legacy = sanitizeConfig({
     schemaVersion: 1,
-    features: { formatChaos: { enabled: true, chancePct: 5 } },
+    features: { formatChaos: { enabled: true, chancePct: 5 }, freeze: { enabled: true, chancePct: 5 } },
   });
   assert.equal(legacy.features.formatChaos.chancePct, 1);
-  assert.equal(legacy.schemaVersion, 2);
+  assert.equal(legacy.features.freeze.chancePct, 1);
+  assert.equal(legacy.schemaVersion, 3);
 
-  // A v2 config keeps a deliberately customised 5%.
-  const custom = sanitizeConfig({
+  // A v2 config keeps a custom formatting value, but its old freeze default migrates.
+  const v2 = sanitizeConfig({
     schemaVersion: 2,
-    features: { formatChaos: { enabled: true, chancePct: 5 } },
+    features: { formatChaos: { enabled: true, chancePct: 5 }, freeze: { enabled: true, chancePct: 5 } },
+  });
+  assert.equal(v2.features.formatChaos.chancePct, 5);
+  assert.equal(v2.features.freeze.chancePct, 1);
+
+  // A v3 config keeps deliberately customised values.
+  const custom = sanitizeConfig({
+    schemaVersion: 3,
+    features: { formatChaos: { enabled: true, chancePct: 5 }, freeze: { enabled: true, chancePct: 5 } },
   });
   assert.equal(custom.features.formatChaos.chancePct, 5);
+  assert.equal(custom.features.freeze.chancePct, 5);
 });

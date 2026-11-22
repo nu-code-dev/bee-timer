@@ -1107,3 +1107,30 @@ body.reduced-motion .swarm-label { animation: none !important; }
   font-size: clamp(12px, 4vw, 16px);
 }
 .controls-status { max-width: 60%; gap: 3px; }
+
+/* ==================== rest mode in compact mode ========================= */
+.app.compact #restOverlay { padding: 4px; border-radius: 16px; }
+.app.compact #restOverlay .overlay-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  width: 100%;
+}
+.app.compact #restOverlay .rest-bee,
+.app.compact #restOverlay .eyebrow,
+.app.compact #restOverlay h2,
+.app.compact #restOverlay .muted,
+.app.compact #restOverlay .rest-progress { display: none; }
+.app.compact #restOverlay .rest-countdown {
+  font-size: 20px;
+  margin: 0;
+  line-height: 1;
+}
+.app.compact #restOverlay .primary-btn.small {
+  padding: 5px 10px;
+  font-size: 10px;
+  border-radius: 9px;
+}
