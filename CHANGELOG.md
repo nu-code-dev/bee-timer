@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet. The hive is resting.
+
+## [0.1.8] - 2026-11-22
+
 ### Changed
 
 - `packaging/arch/`: bumped `bee-timer-bin` to 0.1.4 with the verified release

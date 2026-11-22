@@ -381,3 +381,25 @@ test('starting after reset logs the luck message', () => {
   step(1);
   assert.ok(engine.snapshot().log.some((entry) => entry.text.includes("try your luck")));
 });
+
+
+test('Double Time and Halve Time fire at statistically equal rates', () => {
+  const config = makeConfig({
+    // Huge starting time so the run cannot end before the sample completes.
+    durationMs: 10 ** 12,
+    maxRemainingMs: 10 ** 12,
+    features: {
+      doubleTime: { enabled: true, chancePct: 1 },
+      halveTime: { enabled: true, chancePct: 1 },
+    },
+  });
+  const { engine, step, snap } = harness(config, { rng: mulberry32(1234) });
+  engine.start();
+  step(10_000);
+  const { doubles, halved } = snap.stats;
+  const ratio = doubles / Math.max(1, halved);
+  assert.ok(
+    ratio > 0.7 && ratio < 1.4,
+    `expected roughly equal double/halve rates, got ${doubles} doubles vs ${halved} halves (ratio ${ratio.toFixed(2)})`,
+  );
+});

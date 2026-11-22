@@ -586,12 +586,10 @@ function render(snapshot) {
   const showSpeed = snapshot.speedMult !== 1;
   els.speedChip.classList.toggle('hidden', !showSpeed);
   if (showSpeed) {
-    const multLabel = Number.isInteger(snapshot.speedMult)
-      ? `${snapshot.speedMult}×`
-      : `${snapshot.speedMult}×`;
+    const multLabel = `${snapshot.speedMult}×`;
     els.speedChip.textContent = snapshot.speedPermanent
-      ? `🌀 ${multLabel} ∞`
-      : `🌀 ${multLabel}`;
+      ? `🌀 speed ${multLabel} ∞`
+      : `🌀 speed ${multLabel}`;
   }
   els.pauseChip.classList.toggle('hidden', !(snapshot.running && snapshot.paused));
 
@@ -661,7 +659,7 @@ function showEndScreen(snapshot) {
   const stats = snapshot.stats;
   els.endStats.textContent =
     `${stats.ticks} ticks survived · +${stats.secondsAdded}s · +${stats.minutesAdded}m · ` +
-    `${stats.doubles} doubles · ${stats.halved} halves · ${stats.freezes} freezes · ${stats.rests} rests · ${stats.puns} boosts`;
+    `${stats.doubles} time doubles · ${stats.halved} time halves · ${stats.freezes} freezes · ${stats.rests} rests · ${stats.puns} boosts`;
   if (!showEndScreen.shown) {
     showEndScreen.shown = true;
     playChime();
@@ -748,8 +746,8 @@ function describeEffect(effect) {
       ? 'Formatting chaos: the minute and second values swapped.'
       : 'Formatting chaos: rounded to the nearest minute.';
     case 'speed': return effect.permanent
-      ? `Distorting chaos: time is now permanently ${effect.mult}×.`
-      : `Time is now ${effect.mult}× for ${effect.durationTicks} ticks.`;
+      ? `Speed distortion is permanent: seconds now pass ${effect.mult}× faster.`
+      : `Speed distortion: seconds pass ${effect.mult}× faster for ${effect.durationTicks} ticks.`;
     case 'window': return 'The window got bored and moved.';
     case 'bees': return 'ORIGINAL BEE MODE. BZZZZZZZZZ.';
     case 'rest-start': return 'Rest mode: a 3-minute skippable break.';

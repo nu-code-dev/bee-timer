@@ -354,7 +354,7 @@ export class BeeEngine {
         this.speedState = { mult: next, untilTick: Infinity };
         this.stats.speeds += 1;
         this.stats.distortions += 1;
-        this.pushLog('♾️', `Distorting chaos: time is now permanently ${formatMult(next)}.`);
+        this.pushLog('♾️', `Distorting chaos: seconds now pass permanently ${formatMult(next)} faster.`);
         this.onEffect({ type: 'speed', mult: next, permanent: true });
       }
     } else if (this.roll('speedDistortion')) {
@@ -364,7 +364,7 @@ export class BeeEngine {
       const duration = feature?.durationTicks ?? 4;
       this.speedState = { mult, untilTick: this.tick + duration };
       this.stats.speeds += 1;
-      this.pushLog('🌀', `Time is now ${formatMult(mult)} for ${duration} ticks.`);
+      this.pushLog('🌀', `Tick speed: seconds pass ${formatMult(mult)} faster for ${duration} ticks.`);
       this.onEffect({ type: 'speed', mult, durationTicks: duration, permanent: false });
     }
 
