@@ -15,7 +15,7 @@
 # asset (electron-builder artifactName: bee-timer-${version}-${arch}.${ext}).
 
 pkgname=bee-timer-bin
-pkgver=0.1.7
+pkgver=0.1.8
 pkgrel=1
 pkgdesc='Chaotic study/work countdown timer that fights procrastination (DougDoug-inspired)'
 arch=('x86_64')
@@ -52,7 +52,7 @@ sha256sums=(
 # Prebuilt release asset.
 _appimage="bee-timer-${pkgver}-x86_64.AppImage"
 source_x86_64=("$url/releases/download/v$pkgver/$_appimage")
-sha256sums_x86_64=('0fbc8c0db48c1b45e551c6a53f178f114770e99ef78ff0b1f76257aa69a8c666')
+sha256sums_x86_64=('d320c539ba6ead287790be6b0f964d90c0aae339fb17837c5631aca0e29c3a53')
 
 package() {
   # The AppImage itself, kept read-only under /opt.
