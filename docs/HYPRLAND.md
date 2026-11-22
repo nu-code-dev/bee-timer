@@ -26,7 +26,7 @@ So if you are on a normal Hyprland session with XWayland enabled (the default), 
 ```bash
 BEE_TIMER_OZONE=wayland bee-timer
 # or for the AppImage:
-BEE_TIMER_OZONE=wayland ./bee-timer-0.1.5-x86_64.AppImage
+BEE_TIMER_OZONE=wayland ./bee-timer-0.1.6-x86_64.AppImage
 ```
 
 Any value other than `wayland` is treated as X11. The AUR wrapper passes `BEE_TIMER_OZONE` through, so you can export it from your shell or set it in the `.desktop` `Exec=` line. XWayland must be enabled in your Hyprland config:

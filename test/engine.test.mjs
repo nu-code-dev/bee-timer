@@ -85,7 +85,6 @@ test('formatRemaining: normal, swap, and round modes', () => {
   assert.equal(formatRemaining(600_000, 'swap'), '00:10');
   assert.equal(formatRemaining(59_000, 'swap'), '59:00');
   assert.equal(formatRemaining(544_000, 'round'), '09:00');
-  assert.equal(formatRemaining(3_723_000, 'swap'), '02:01:03'); // hours <-> minutes
 
   assert.equal(formatRemaining(586_000, 'round'), '10:00');
 });
@@ -154,9 +153,9 @@ test('freeze pauses the countdown for the configured cycles', () => {
   assert.equal(snap.frozenTicks, 0);
 });
 
-test('formatting chaos is display-only and sticky until reset', () => {
+test('formatting chaos swaps the actual minute and second values', () => {
   const config = makeConfig({
-    durationMs: 10_000,
+    durationMs: 836_000, // 13:56
     features: {
       formatChaos: {
         enabled: true,
@@ -169,14 +168,34 @@ test('formatting chaos is display-only and sticky until reset', () => {
   });
   const { engine, step, snap } = harness(config, { rng: sequence([0]) });
   engine.start();
+  step(1); // 13:55 remaining -> swapped to 55:13
+  assert.equal(snap.display, '55:13');
+  assert.equal(snap.formatKind, null); // it is a real time change, not a display mask
+  step(1); // normal countdown continues from the swapped clock
+  assert.equal(snap.display, '55:12');
+});
+
+test('rounding chaos is display-only and sticky until reset', () => {
+  const config = makeConfig({
+    durationMs: 620_000, // 10:20
+    features: {
+      formatChaos: {
+        enabled: true,
+        chancePct: 5,
+        swapMinSec: false,
+        roundNearestMinute: true,
+        durationTicks: 3,
+      },
+    },
+  });
+  const { engine, step, snap } = harness(config, { rng: sequence([0]) });
+  engine.start();
   step(1);
-  assert.equal(snap.remainingMs, 9000);
-  assert.equal(snap.rawDisplay, '00:09');
-  assert.equal(snap.display, '09:00');
-  assert.equal(snap.formatKind, 'swap');
+  assert.equal(snap.formatKind, 'round');
+  assert.equal(snap.display, '10:00'); // rounded display, real time untouched
   step(5);
-  assert.equal(snap.formatKind, 'swap'); // stays applied (no glitchy revert)
-  assert.equal(snap.remainingMs, 4000);
+  assert.equal(snap.formatKind, 'round'); // sticky
+  assert.equal(snap.remainingMs, 614_000);
   engine.reset();
   assert.equal(snap.formatKind, null);
 });

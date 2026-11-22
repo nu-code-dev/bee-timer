@@ -23,6 +23,7 @@ const seenLogIds = new Set();
 let compactMode = false;
 let editingDuration = false;
 let swarmThemeTimer = null;
+let swappedChipUntil = 0;
 let swarmOverlayTimer = null;
 
 const els = {};
@@ -573,9 +574,10 @@ function render(snapshot) {
   els.timeDisplay.textContent = snapshot.display;
   els.timeDisplay.classList.toggle('chaos-swap', snapshot.formatKind === 'swap');
   els.timeDisplay.classList.toggle('chaos-round', snapshot.formatKind === 'round');
-  els.formatChip.classList.toggle('hidden', !snapshot.formatKind);
-  if (snapshot.formatKind) {
-    els.formatChip.textContent = snapshot.formatKind === 'swap' ? '🔀 swapped' : '🔀 rounded';
+  const showFormatChip = Boolean(snapshot.formatKind) || Date.now() < swappedChipUntil;
+  els.formatChip.classList.toggle('hidden', !showFormatChip);
+  if (showFormatChip) {
+    els.formatChip.textContent = snapshot.formatKind === 'round' ? '🔀 rounded' : '🔀 swapped';
   }
   els.secondLen.textContent = `${(snapshot.tickLengthMs / 1000).toFixed(1)}s`;
 
@@ -704,6 +706,12 @@ function handleEffect(effect) {
     case 'swarm':
       playSwarm(effect);
       break;
+    case 'format':
+      if (effect.swapped) {
+        swappedChipUntil = Date.now() + 3200;
+        render(latest);
+      }
+      break;
     case 'bees':
       unlockAudio();
       playBuzz(effect.durationMs || 4000);
@@ -739,7 +747,7 @@ function describeEffect(effect) {
     case 'halve': return 'Remaining time cut in half. Finally, some good news.';
     case 'freeze': return `Timer frozen for ${effect.cycles ?? 5} cycles.`;
     case 'format': return effect.kind === 'swap'
-      ? 'Formatting chaos: minutes and seconds swapped.'
+      ? 'Formatting chaos: the minute and second values swapped.'
       : 'Formatting chaos: rounded to the nearest minute.';
     case 'speed': return effect.permanent
       ? `Distorting chaos: time is now permanently ${effect.mult}×.`

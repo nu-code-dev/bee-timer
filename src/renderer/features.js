@@ -48,7 +48,7 @@ export const FEATURES = [
     key: 'formatChaos',
     icon: '🔀',
     title: 'Formatting Chaos',
-    desc: 'Swaps minutes/seconds or rounds the display. Display only.',
+    desc: 'Swaps the minute/second values for real (13:56 → 56:13) or rounds the display.',
     group: 'core',
   },
   {

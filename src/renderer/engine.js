@@ -461,18 +461,35 @@ export class BeeEngine {
     if (feature.roundNearestMinute) options.push('round');
     if (!options.length) return;
     const kind = options[Math.floor(this.rng() * options.length)];
-    // Sticky until reset (or until another formatting chaos event): it used to
-    // revert after a few ticks, which read as a display glitch.
-    this.formatState = { kind, untilTick: Infinity };
     this.stats.formats += 1;
-    const hourScale = this.remainingMs >= 3_600_000;
-    this.pushLog(
-      '🔀',
-      kind === 'swap'
-        ? (hourScale ? 'Hours and minutes swapped. Everything is fine.' : 'Minutes and seconds swapped. Everything is fine.')
-        : 'Rounded to the nearest minute. Who approved this?',
-    );
-    this.onEffect({ type: 'format', kind });
+
+    if (kind === 'swap') {
+      // A real swap, not a digit reshuffle: the minute and second *values*
+      // change places, so 13:56 becomes 56:13 and then counts down 56:12,
+      // 56:11, ... like a normal clock.
+      const totalSeconds = Math.max(1, Math.ceil(this.remainingMs / 1000));
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const sec = totalSeconds % 60;
+      const swappedSeconds = h > 0
+        ? m * 3600 + h * 60 + sec // swap hours <-> minutes
+        : sec * 60 + m;           // swap minutes <-> seconds
+      const cappedSeconds = Math.min(
+        swappedSeconds,
+        Math.floor(this.maxRemainingMs / 1000),
+      );
+      const before = this.remainingMs;
+      this.remainingMs = Math.max(1000, cappedSeconds * 1000);
+      this.formatState = { kind: null, untilTick: 0 };
+      this.pushLog('🔀', `Formatting chaos: ${formatRemaining(before, null)} became ${formatRemaining(this.remainingMs, null)}.`);
+      this.onEffect({ type: 'format', kind: 'swap', swapped: true });
+      return;
+    }
+
+    // Rounding is display-only and sticky until reset / another formatting event.
+    this.formatState = { kind, untilTick: Infinity };
+    this.pushLog('🔀', 'Rounded to the nearest minute. Who approved this?');
+    this.onEffect({ type: 'format', kind: 'round' });
   }
 
   startRest() {
