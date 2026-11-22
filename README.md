@@ -45,7 +45,7 @@ Every feature is independently toggleable and has a per-tick probability you can
 | ✖️ Double Time | 1% | **On** | Doubles remaining time (capped at 24h). |
 | ➗ Halve Time | 1% | **On** | Cuts remaining time in half — a welcome mercy. |
 | ❄️ Freeze Timer | 5% | **On** | Pauses the countdown for 5 cycles. |
-| 🔀 Formatting Chaos | 5% | **On** | Swaps the **actual** minute/second values (13:56 → 56:13, then counts down 56:12, 56:11…), or rounds the remaining time to the nearest minute (also a real change, so the clock keeps ticking). |
+| 🔀 Formatting Chaos | 1% | **On** | Swaps the **actual** minute/second values (13:56 → 56:13, then counts down 56:12, 56:11…), or rounds the remaining time to the nearest minute (also a real change, so the clock keeps ticking). |
 | 🌀 Speed Distortion | 10% | **On** | **Tick speed** changes: each second passes 0.5× or 2× as fast, for a configurable number of ticks (default 4). This does *not* change the time value — that's Double Time. |
 | ♾️ Distorting Chaos | 1% | **On** | Makes speed distortion permanent and compounding (2× → 4× → 8×, or back down with 0.5×). Requires Speed Distortion; while on, its own chance replaces Speed Distortion's chance/duration. |
 | 💬 Supportive BEE Messages | 1% | **On** | A kind, encouraging message from the hive (no puns). Desktop notification plus in-app toast. |
@@ -106,7 +106,7 @@ curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.
 - optional interactive prompts, defaulting to **No** (and reading from `/dev/tty`, so `curl | bash` still works): install `mako` on Arch when no notification daemon is running (other distros get package-manager advice), and append BEE Timer window rules to your Hyprland config (Lua `hyprland.lua` when present, legacy `hyprland.conf` otherwise). The rule edit backs the file up, skips duplicate rules, and runs `hyprctl reload` when available.
 - unattended installs: `BEE_TIMER_YES=1` accepts both prompts; with no TTY the answers stay No
 - uninstall with: `curl -fsSL https://raw.githubusercontent.com/nu-code-dev/bee-timer/main/install.sh | bash -s -- --uninstall` — this also removes the BEE Timer rule block the installer added to your Hyprland config, leaving the rest of the file and your app config untouched
-- `BEE_TIMER_PREFIX=/usr/local` with `sudo` for a system-wide install, `BEE_TIMER_VERSION=0.1.8` to pin a release
+- `BEE_TIMER_PREFIX=/usr/local` with `sudo` for a system-wide install, `BEE_TIMER_VERSION=0.1.9` to pin a release
 - completely optional — the AUR package, AppImage, `.deb`, and source builds below all still work
 - the same setup notes (notification-daemon status, copyable Hyprland snippets, installed paths, uninstall command) are inside the app under **Settings → Setup & integration**
 
@@ -125,21 +125,21 @@ That installs the release AppImage to `/opt/bee-timer/` behind a `/usr/bin/bee-t
 
 ### Direct download (Linux)
 
-Grab `bee-timer-0.1.8-x86_64.AppImage` or `bee-timer-0.1.8-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.8`):
+Grab `bee-timer-0.1.9-x86_64.AppImage` or `bee-timer-0.1.9-amd64.deb` from [Releases](https://github.com/nu-code-dev/bee-timer/releases) (tag `v0.1.9`):
 
 ```bash
 # AppImage
-chmod +x bee-timer-0.1.8-x86_64.AppImage
-./bee-timer-0.1.8-x86_64.AppImage
+chmod +x bee-timer-0.1.9-x86_64.AppImage
+./bee-timer-0.1.9-x86_64.AppImage
 
 # Debian / Ubuntu
-sudo apt install ./bee-timer-0.1.8-amd64.deb
+sudo apt install ./bee-timer-0.1.9-amd64.deb
 ```
 
 <a id="windows"></a>
 ### Windows
 
-Download the [`bee-timer-0.1.8-x64.exe`](https://github.com/nu-code-dev/bee-timer/releases/tag/v0.1.3) NSIS installer from [Releases](https://github.com/nu-code-dev/bee-timer/releases). It is built by GitHub Actions on every release and is **unsigned**:
+Download the [`bee-timer-0.1.9-x64.exe`](https://github.com/nu-code-dev/bee-timer/releases/tag/v0.1.3) NSIS installer from [Releases](https://github.com/nu-code-dev/bee-timer/releases). It is built by GitHub Actions on every release and is **unsigned**:
 
 - SmartScreen will show *"Windows protected your PC"* → click **More info** → **Run anyway**.
 - Windows builds are **x64 only** and are CI-produced; they are not smoke-tested on real Windows hardware by the maintainer yet.
@@ -147,7 +147,7 @@ Download the [`bee-timer-0.1.8-x64.exe`](https://github.com/nu-code-dev/bee-time
 <a id="macos"></a>
 ### macOS
 
-Download the [`bee-timer-0.1.8-arm64.dmg`](https://github.com/nu-code-dev/bee-timer/releases/tag/v0.1.3) disk image from [Releases](https://github.com/nu-code-dev/bee-timer/releases). It is **Apple Silicon only** (the CI runner is `macos-latest`/arm64), unsigned and not notarized:
+Download the [`bee-timer-0.1.9-arm64.dmg`](https://github.com/nu-code-dev/bee-timer/releases/tag/v0.1.3) disk image from [Releases](https://github.com/nu-code-dev/bee-timer/releases). It is **Apple Silicon only** (the CI runner is `macos-latest`/arm64), unsigned and not notarized:
 
 - Gatekeeper will block the app → right-click the app → **Open**, or allow it under **System Settings → Privacy & Security**.
 - Intel Macs would need a separate build (not configured in CI yet); building from source below also works.
@@ -245,7 +245,7 @@ npm run dist:win     # Windows installer — run on Windows or CI
 npm run dist:mac     # macOS .dmg — run on macOS or CI
 ```
 
-Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.8-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.8-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
+Linux artifact names are pinned by `build.artifactName = "bee-timer-${version}-${arch}.${ext}"`: `dist/bee-timer-0.1.9-x86_64.AppImage` (AppImage) and `dist/bee-timer-0.1.9-amd64.deb` (Debian package). Cross-platform builds are out of scope locally — the [release workflow](.github/workflows/release.yml) builds each OS on its own runner and attaches the artifacts to a GitHub Release.
 
 ## Testing
 

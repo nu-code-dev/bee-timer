@@ -11,7 +11,7 @@ const { app } = require('electron');
  * into the Advanced section by design.
  */
 const DEFAULTS = Object.freeze({
-  schemaVersion: 1,
+  schemaVersion: 2,
   onboarded: false,
   durationMs: 10 * 60 * 1000,
   tickBaseMs: 1000,
@@ -24,7 +24,7 @@ const DEFAULTS = Object.freeze({
     doubleTime:     { enabled: true,  chancePct: 1 },
     halveTime:      { enabled: true,  chancePct: 1 },
     freeze:         { enabled: true,  chancePct: 5, cycles: 5 },
-    formatChaos:    { enabled: true,  chancePct: 5, swapMinSec: true, roundNearestMinute: true, durationTicks: 3 },
+    formatChaos:    { enabled: true,  chancePct: 1, swapMinSec: true, roundNearestMinute: true, durationTicks: 3 },
     speedDistortion:{ enabled: true,  chancePct: 10, multipliers: [0.5, 2], durationTicks: 4 },
     distortingChaos:{ enabled: true,  chancePct: 1 },
     windowChaos:    { enabled: false, chancePct: 1, marginPx: 40 },
@@ -108,13 +108,20 @@ function sanitizeConfig(input) {
   // Distorting Chaos only makes sense while Speed Distortion is enabled.
   if (!features.speedDistortion.enabled) features.distortingChaos.enabled = false;
 
+  // v1 -> v2: Formatting Chaos defaulted to 5% per tick, which made the real
+  // swap/round fire far too often. Migrate configs that still carry the old
+  // default; a deliberately customised value in a v2 config is preserved.
+  if (Number(raw.schemaVersion || 1) < 2 && features.formatChaos.chancePct === 5) {
+    features.formatChaos.chancePct = 1;
+  }
+
   const appearance = raw.appearance && typeof raw.appearance === 'object' ? raw.appearance : {};
   const win = raw.window && typeof raw.window === 'object' ? raw.window : {};
   const x = typeof win.x === 'number' && Number.isFinite(win.x) ? Math.round(win.x) : null;
   const y = typeof win.y === 'number' && Number.isFinite(win.y) ? Math.round(win.y) : null;
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     onboarded: bool(raw.onboarded, DEFAULTS.onboarded),
     durationMs: Math.round(num(raw.durationMs, 5000, DEFAULTS.maxRemainingMs, DEFAULTS.durationMs)),
     tickBaseMs: 1000,

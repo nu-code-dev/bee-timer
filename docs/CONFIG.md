@@ -42,7 +42,7 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
 | `doubleTime` | `true` | `1` | — | Doubles remaining time, capped at 24h. |
 | `halveTime` | `true` | `1` | — | Cuts remaining time in half (never below 1 second until the timer ends). A mercy, not a curse. |
 | `freeze` | `true` | `5` | `cycles`: `5` (1–60) | Pauses the countdown for N ticks. |
-| `formatChaos` | `true` | `5` | `swapMinSec`: `true`; `roundNearestMinute`: `true`; `durationTicks`: legacy/unused | **Both options are real time mutations.** Swap trades the minute and second values (13:56 → 56:13) and the clock then counts down normally (56:12, 56:11…); with an hours display it swaps hours↔minutes instead. Round snaps the remaining time to the nearest minute (e.g. 10:19 → 10:00), after which the countdown continues normally. |
+| `formatChaos` | `true` | `1` | `swapMinSec`: `true`; `roundNearestMinute`: `true`; `durationTicks`: legacy/unused | **Both options are real time mutations.** Swap trades the minute and second values (13:56 → 56:13) and the clock then counts down normally (56:12, 56:11…); with an hours display it swaps hours↔minutes instead. Round snaps the remaining time to the nearest minute (e.g. 10:19 → 10:00), after which the countdown continues normally. |
 | `speedDistortion` | `true` | `10` | `multipliers`: `[0.5, 2]` (only 0.5 and 2 are valid); `durationTicks`: `4` (1–60, editable in Settings) | Scales the real length of the next N ticks (**tick speed only** — it never changes the remaining time value). 0.5× = 2s real per game second; 2× = 0.5s real. |
 | `distortingChaos` | `true` | `1` | — | Only active while `speedDistortion.enabled` is true (the sanitizer forces it off otherwise). Makes speed distortion **permanent and compounding**: each trigger multiplies the current speed (1× → 2× → 4×, or back down with 0.5×). While enabled, `speedDistortion`'s chance and `durationTicks` are ignored — this chance is used instead, and the speed never expires. |
 | `windowChaos` | `false` | `1` | `marginPx`: `40` (0–400) | Randomly moves the window within the current monitor's work area (uses `hyprctl eval` on Hyprland when native moves are ignored). Hidden under "Advanced · don't touch". |
@@ -89,7 +89,7 @@ Every feature object has `enabled` (boolean) and `chancePct` (number, 0–100, t
     "doubleTime":      { "enabled": true,  "chancePct": 1 },
     "halveTime":       { "enabled": true,  "chancePct": 1 },
     "freeze":          { "enabled": true,  "chancePct": 5, "cycles": 5 },
-    "formatChaos":     { "enabled": true,  "chancePct": 5, "swapMinSec": true, "roundNearestMinute": true, "durationTicks": 3 },
+    "formatChaos":     { "enabled": true,  "chancePct": 1, "swapMinSec": true, "roundNearestMinute": true, "durationTicks": 3 },
     "speedDistortion": { "enabled": true,  "chancePct": 10, "multipliers": [0.5, 2], "durationTicks": 4 },
     "distortingChaos": { "enabled": true,  "chancePct": 1 },
     "windowChaos":     { "enabled": false, "chancePct": 1, "marginPx": 40 },

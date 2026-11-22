@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { BeeEngine, mulberry32, formatRemaining } from '../src/renderer/engine.js';
+
+const require = createRequire(import.meta.url);
+const { sanitizeConfig } = require('../src/main/config-store.js');
 
 /** Base config: every effect off, then override per test. */
 function makeConfig({ durationMs = 60_000, maxRemainingMs = 86_400_000, features = {} } = {}) {
@@ -402,4 +406,24 @@ test('Double Time and Halve Time fire at statistically equal rates', () => {
     ratio > 0.7 && ratio < 1.4,
     `expected roughly equal double/halve rates, got ${doubles} doubles vs ${halved} halves (ratio ${ratio.toFixed(2)})`,
   );
+});
+
+
+test('formatting chaos default is 1% and old 5% configs migrate once', () => {
+  const fresh = sanitizeConfig({});
+  assert.equal(fresh.features.formatChaos.chancePct, 1);
+
+  const legacy = sanitizeConfig({
+    schemaVersion: 1,
+    features: { formatChaos: { enabled: true, chancePct: 5 } },
+  });
+  assert.equal(legacy.features.formatChaos.chancePct, 1);
+  assert.equal(legacy.schemaVersion, 2);
+
+  // A v2 config keeps a deliberately customised 5%.
+  const custom = sanitizeConfig({
+    schemaVersion: 2,
+    features: { formatChaos: { enabled: true, chancePct: 5 } },
+  });
+  assert.equal(custom.features.formatChaos.chancePct, 5);
 });
