@@ -23,7 +23,8 @@ const seenLogIds = new Set();
 let compactMode = false;
 let editingDuration = false;
 let swarmThemeTimer = null;
-let swappedChipUntil = 0;
+let formatChipUntil = 0;
+let formatChipLabel = '🔀 swapped';
 let swarmOverlayTimer = null;
 
 const els = {};
@@ -574,11 +575,9 @@ function render(snapshot) {
   els.timeDisplay.textContent = snapshot.display;
   els.timeDisplay.classList.toggle('chaos-swap', snapshot.formatKind === 'swap');
   els.timeDisplay.classList.toggle('chaos-round', snapshot.formatKind === 'round');
-  const showFormatChip = Boolean(snapshot.formatKind) || Date.now() < swappedChipUntil;
+  const showFormatChip = Date.now() < formatChipUntil;
   els.formatChip.classList.toggle('hidden', !showFormatChip);
-  if (showFormatChip) {
-    els.formatChip.textContent = snapshot.formatKind === 'round' ? '🔀 rounded' : '🔀 swapped';
-  }
+  if (showFormatChip) els.formatChip.textContent = formatChipLabel;
   els.secondLen.textContent = `${(snapshot.tickLengthMs / 1000).toFixed(1)}s`;
 
   els.freezeChip.classList.toggle('hidden', snapshot.frozenTicks <= 0);
@@ -707,10 +706,9 @@ function handleEffect(effect) {
       playSwarm(effect);
       break;
     case 'format':
-      if (effect.swapped) {
-        swappedChipUntil = Date.now() + 3200;
-        render(latest);
-      }
+      formatChipLabel = effect.kind === 'swap' ? '🔀 swapped' : '🔀 rounded';
+      formatChipUntil = Date.now() + 3200;
+      render(latest);
       break;
     case 'bees':
       unlockAudio();

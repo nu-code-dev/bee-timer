@@ -486,10 +486,18 @@ export class BeeEngine {
       return;
     }
 
-    // Rounding is display-only and sticky until reset / another formatting event.
-    this.formatState = { kind, untilTick: Infinity };
-    this.pushLog('🔀', 'Rounded to the nearest minute. Who approved this?');
-    this.onEffect({ type: 'format', kind: 'round' });
+    // Rounding is also a real time change: snap the remaining time to the
+    // nearest minute, then let the clock keep counting down normally.
+    const totalSeconds = Math.max(1, Math.ceil(this.remainingMs / 1000));
+    const roundedSeconds = Math.max(60, Math.round(totalSeconds / 60) * 60);
+    const before = this.remainingMs;
+    this.remainingMs = Math.max(
+      1000,
+      Math.min(roundedSeconds * 1000, this.maxRemainingMs),
+    );
+    this.formatState = { kind: null, untilTick: 0 };
+    this.pushLog('🔀', `Formatting chaos: ${formatRemaining(before, null)} rounded to ${formatRemaining(this.remainingMs, null)}.`);
+    this.onEffect({ type: 'format', kind: 'round', rounded: true });
   }
 
   startRest() {

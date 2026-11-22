@@ -175,7 +175,7 @@ test('formatting chaos swaps the actual minute and second values', () => {
   assert.equal(snap.display, '55:12');
 });
 
-test('rounding chaos is display-only and sticky until reset', () => {
+test('rounding chaos snaps the real time and keeps counting down', () => {
   const config = makeConfig({
     durationMs: 620_000, // 10:20
     features: {
@@ -190,14 +190,12 @@ test('rounding chaos is display-only and sticky until reset', () => {
   });
   const { engine, step, snap } = harness(config, { rng: sequence([0]) });
   engine.start();
-  step(1);
-  assert.equal(snap.formatKind, 'round');
-  assert.equal(snap.display, '10:00'); // rounded display, real time untouched
-  step(5);
-  assert.equal(snap.formatKind, 'round'); // sticky
-  assert.equal(snap.remainingMs, 614_000);
-  engine.reset();
-  assert.equal(snap.formatKind, null);
+  step(1); // 10:19 -> rounded to 10:00
+  assert.equal(snap.remainingMs, 600_000);
+  assert.equal(snap.display, '10:00');
+  step(1); // keeps counting normally
+  assert.equal(snap.remainingMs, 599_000);
+  assert.equal(snap.display, '09:59');
 });
 
 test('speed distortion scales real tick length and expires', () => {
